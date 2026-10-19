@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta charset="utf-8">
+<title>Pirate_TV</title>
+<HTA:APPLICATION ID="ptv" APPLICATIONNAME="Pirate_TV" ICON="Pirate_TV.ico" BORDER="thick" CAPTION="yes"
+  SINGLEINSTANCE="yes" SCROLL="no" WINDOWSTATE="maximize" MAXIMIZEBUTTON="yes" CONTEXTMENU="no" />
+<style>
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#1a1f27; color:#f4ecdc; font-family:"Segoe UI",Arial,sans-serif; font-size:14px; overflow:hidden; -ms-user-select:none; }
+  input, select { -ms-user-select:text; }
+  button { font-family:"Segoe UI",Arial,sans-serif; outline:none; }
+  #content, #side, #mbox, #cfgbox, #sres, .crow { -ms-overflow-style:-ms-autohiding-scrollbar; }
+
+  /* ---------- inicio de sesion ---------- */
+  #login { position:absolute; left:0; top:0; right:0; bottom:0; display:none;
+           background:radial-gradient(ellipse at center, #34404f 0%, #232a35 45%, #14181f 100%); }
+  #lbox { position:absolute; left:50%; top:50%; width:360px; margin-left:-180px; transform:translateY(-50%); -ms-transform:translateY(-50%); text-align:center; }
+  #lLogo { width:230px; height:auto; display:block; margin:0 auto 26px auto; }
+  .linp { display:block; width:100%; height:52px; margin:0 0 14px 0; padding:0 18px; font-size:17px; color:#f4ecdc;
+          background:rgba(10,13,18,.55); border:1px solid #4a586b; border-radius:10px; }
+  .linp:focus { border-color:#cfa65c; background:rgba(10,13,18,.75); }
+  .lgo { display:block; width:100%; height:54px; border:0; border-radius:10px; cursor:pointer; font-size:17px; font-weight:800; letter-spacing:3px; color:#1a1f27;
+         background:linear-gradient(to bottom, #f1d9a7, #cfa65c 55%, #b08843); }
+  .lgo:hover { background:linear-gradient(to bottom, #f7e5bd, #dcb56a 55%, #bd9550); }
+  .lgo:active { transform:scale(.98); }
+  .lgo[disabled] { opacity:.6; cursor:default; }
+  #lmsg { min-height:44px; margin-top:16px; color:#e8c986; font-size:14px; line-height:1.5; }
+  .gearb { position:absolute; width:44px; height:44px; border-radius:50%; border:1px solid #3e4756; background:rgba(10,13,18,.35); color:#8f9bab; font-size:22px; cursor:pointer; padding:0; line-height:40px; text-align:center; }
+  .gearb:hover { color:#f1d9a7; border-color:#cfa65c; }
+  #lgear { right:22px; bottom:22px; }
+
+  /* ---------- barra superior ---------- */
+  #app { position:absolute; left:0; top:0; right:0; bottom:0; display:none; }
+  #bar { position:absolute; left:0; right:0; top:0; height:64px; z-index:20; display:flex; align-items:center; padding:0 22px;
+         background:linear-gradient(to bottom, rgba(12,15,20,.97), rgba(26,31,39,.62)); }
+  .brand { display:flex; align-items:center; cursor:pointer; margin-right:18px; }
+  #bLogo { width:44px; height:44px; margin-right:10px; }
+  .bname { font-family:Georgia,"Times New Roman",serif; font-size:24px; font-weight:700; letter-spacing:1px; color:#e3bd75; }
+  .nb { background:rgba(255,255,255,.06); border:1px solid #3e4756; border-radius:22px; color:#f4ecdc; cursor:pointer; font-size:14px; height:40px; padding:0 18px; margin-left:8px; }
+  .nb:hover { background:rgba(207,166,92,.22); border-color:#cfa65c; }
+  .nb:active { transform:scale(.96); }
+  .nb.ic { width:40px; padding:0; font-size:20px; }
+  #bTitle { font-size:17px; color:#f1d9a7; font-weight:600; margin-left:14px; }
+  .sp { flex:1; }
+  .inp { background:rgba(10,13,18,.6); color:#f4ecdc; border:1px solid #4a586b; padding:7px 12px; font-size:14px; border-radius:6px; }
+  #q { width:340px; height:40px; border-radius:22px; padding:0 18px; font-size:15px; }
+  #q:focus { border-color:#cfa65c; }
+
+  /* ---------- portada con las 3 imagenes ---------- */
+  #home { position:absolute; left:0; right:0; top:64px; bottom:24px; display:none; }
+  #tiles { position:absolute; left:0; right:0; top:0; bottom:0; display:flex; align-items:center; justify-content:center; padding:0 2%; }
+  .tile { width:31%; max-width:440px; margin:0 1.1%; cursor:pointer; transition:transform .15s; }
+  .tile img { display:block; width:100%; height:auto; }
+  .tile:hover { transform:scale(1.05); }
+  .tile:active { transform:scale(.97); }
+
+  /* ---------- categorias (cajon) ---------- */
+  #secWrap { position:absolute; left:0; right:0; top:0; bottom:24px; display:none; }
+  #sideBg { display:none; position:absolute; left:0; right:0; top:0; bottom:0; z-index:35; }
+  #side { position:absolute; left:0; top:0; bottom:0; width:320px; background:rgba(16,20,26,.98); z-index:40; padding:74px 0 10px 0; overflow:auto;
+          transform:translateX(-100%); transition:transform .22s; border-right:1px solid #3e4756; }
+  #side.open { transform:translateX(0); }
+  .cat { display:flex; align-items:center; padding:14px 22px; font-size:15px; cursor:pointer; color:#aeb8c5; border-left:4px solid transparent; }
+  .cat:hover { color:#fff; background:#232a35; }
+  .cat.on { color:#fff; font-weight:700; border-left-color:#cfa65c; background:#2c343f; }
+  .cn { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .cc { margin-left:10px; font-size:12px; color:#7d8999; font-weight:400; }
+
+  /* ---------- contenido ---------- */
+  #content { position:absolute; left:0; right:0; top:0; bottom:0; overflow:auto; }
+  #sres { position:absolute; left:0; right:0; top:0; bottom:24px; overflow:auto; display:none; padding-top:76px; }
+  .heroSp { height:78px; }
+  .hero { height:430px; background-size:cover; background-position:center 20%; background-color:#2c343f; position:relative; }
+  .heroShade { position:absolute; left:0; right:0; top:0; bottom:0;
+     background:linear-gradient(to right, rgba(26,31,39,.92) 0%, rgba(26,31,39,.5) 45%, rgba(26,31,39,0) 75%), linear-gradient(to top, #1a1f27 0%, rgba(26,31,39,0) 38%); }
+  .heroTxt { position:absolute; left:40px; bottom:64px; width:48%; }
+  .heroTxt h1 { font-size:42px; margin:0 0 12px 0; text-shadow:2px 2px 8px #000; }
+  .heroTxt p { font-size:15px; line-height:1.5; margin:0 0 18px 0; text-shadow:1px 1px 4px #000; color:#ece4d2; }
+  .secT { font-size:21px; font-weight:600; margin:8px 40px 14px 40px; color:#f1d9a7; }
+  .cnt { font-size:12px; color:#7d8999; font-weight:400; margin-left:6px; }
+  .grid { display:flex; flex-wrap:wrap; padding:0 24px 20px 40px; }
+  .crow { display:flex; overflow-x:auto; padding:6px 40px 18px 40px; }
+  .crow .card { flex:0 0 auto; }
+  .card { width:176px; margin:0 12px 30px 0; cursor:pointer; position:relative; transition:transform .15s; }
+  .card:hover { transform:scale(1.06); z-index:5; }
+  .card:active { transform:scale(.97); }
+  .poster { width:176px; height:264px; background:#2c343f; border-radius:6px; overflow:hidden; position:relative; box-shadow:0 3px 10px rgba(0,0,0,.6); }
+  .card.lv { width:156px; }
+  .card.lv .poster { width:156px; height:104px; background:#232a35; }
+  .poster img { position:absolute; left:0; top:0; width:100%; height:100%; }
+  .card.lv .poster img { left:50%; top:50%; width:auto; height:auto; max-width:80%; max-height:80%; transform:translate(-50%,-50%); }
+  .ph { position:absolute; left:8px; right:8px; top:50%; transform:translateY(-50%); text-align:center; color:#7d8999; font-size:13px; }
+  .bd { position:absolute; right:6px; top:6px; background:rgba(0,0,0,.78); color:#f1d9a7; padding:2px 6px; border-radius:3px; font-size:11px; font-weight:700; }
+  .rtb { position:absolute; left:6px; bottom:10px; background:#fa320a; color:#fff; padding:2px 6px; border-radius:3px; font-size:11px; font-weight:700; }
+  .rtb.rot { background:#5b8c2a; }
+  .wb { position:absolute; left:6px; top:6px; background:#46d369; color:#000; padding:1px 6px; border-radius:3px; font-size:12px; font-weight:700; }
+  .ov { position:absolute; left:0; right:0; top:0; bottom:0; background:rgba(0,0,0,.45); opacity:0; transition:opacity .15s; display:flex; align-items:center; justify-content:center; font-size:46px; color:#f1d9a7; }
+  .card:hover .ov { opacity:1; }
+  .rm { position:absolute; right:6px; top:6px; z-index:3; width:28px; height:28px; line-height:26px; text-align:center; background:rgba(0,0,0,.8); border:1px solid #8f9bab; border-radius:50%; font-size:12px; }
+  .rm:hover { background:#cfa65c; color:#1a1f27; }
+  .ct { margin-top:7px; font-size:13px; color:#e6dfcf; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .cs { font-size:11px; color:#7d8999; margin-top:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .msg { color:#8f9bab; padding:10px 40px 30px 40px; font-size:14px; }
+  .pgb { position:absolute; left:0; right:0; bottom:0; height:4px; background:rgba(255,255,255,.3); display:none; }
+  .pgb i { display:block; height:100%; width:0; background:#cfa65c; }
+
+  /* ---------- buscador ---------- */
+  .srT { font-size:22px; margin:6px 40px 16px 40px; color:#e6dfcf; }
+  .srT b { color:#f1d9a7; }
+  .schips { margin:0 40px 18px 40px; }
+  .sch { display:inline-block; padding:11px 22px; margin:0 10px 10px 0; border:1px solid #3e4756; border-radius:26px; background:#232a35; color:#f4ecdc; font-size:15px; cursor:pointer; }
+  .sch:hover { border-color:#cfa65c; }
+  .sch:active { transform:scale(.96); }
+  .sch.on { background:linear-gradient(to bottom, #f1d9a7, #cfa65c 60%, #b08843); color:#1a1f27; font-weight:700; border-color:#cfa65c; }
+  .sch .n { opacity:.7; margin-left:7px; font-size:12px; }
+  .more { display:block; margin:0 40px 34px 40px; padding:14px 28px; font-size:15px; font-weight:600; color:#f1d9a7; background:#232a35; border:1px solid #4a586b; border-radius:26px; cursor:pointer; }
+  .more:hover { border-color:#cfa65c; }
+
+  #status { position:absolute; left:0; right:0; bottom:0; height:24px; background:#10141a; border-top:1px solid #2c343f; padding:4px 14px; color:#8f9bab; font-size:12px; z-index:30; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* ---------- ficha ---------- */
+  #modal { position:absolute; left:0; right:0; top:0; bottom:0; background:rgba(0,0,0,.78); display:none; z-index:50; }
+  #mbox { position:absolute; left:8%; right:8%; top:3%; bottom:3%; background:#232a35; border-radius:8px; overflow:auto; box-shadow:0 10px 50px #000; border:1px solid #3e4756; }
+  #mclose { position:absolute; right:calc(8% + 14px); top:calc(3% + 14px); z-index:60; background:#232a35; color:#fff; border:1px solid #4a586b; border-radius:50%; width:40px; height:40px; cursor:pointer; font-size:16px; }
+  #mclose:hover { background:#cfa65c; color:#1a1f27; }
+  #vbox { display:none; background:#000; }
+  #v { width:100%; max-height:440px; background:#000; }
+  .dh { position:relative; height:440px; background-size:cover; background-position:center top; background-color:#2c343f; }
+  .dh.nobg { height:300px; background:linear-gradient(135deg,#3a3326,#232a35); }
+  .dsh { position:absolute; left:0; right:0; top:0; bottom:0;
+     background:linear-gradient(to top, #232a35 0%, rgba(35,42,53,.6) 30%, rgba(35,42,53,0) 62%), linear-gradient(to right, rgba(35,42,53,.7), rgba(35,42,53,0) 60%); }
+  .dht { position:absolute; left:40px; right:40px; bottom:28px; }
+  .dht h1 { font-size:38px; margin:0 0 10px 0; text-shadow:2px 2px 8px #000; }
+  .chips { margin-bottom:14px; color:#ddd5c3; font-size:14px; }
+  .chips span { margin-right:14px; }
+  .imdb { display:inline-block; background:#f5c518; color:#000; font-weight:700; padding:1px 7px; border-radius:3px; margin-right:6px; }
+  .rtl { display:inline-block; background:#fa320a; color:#fff; font-weight:700; padding:1px 7px; border-radius:3px; margin-right:6px; }
+  .rtl.rot { background:#5b8c2a; }
+  .rated { border:1px solid #8f9bab; padding:0 6px; }
+  .btnw { background:linear-gradient(to bottom, #f1d9a7, #cfa65c 60%, #b08843); color:#1a1f27; border:0; border-radius:6px; padding:12px 26px; font-size:16px; font-weight:700; cursor:pointer; margin:0 10px 6px 0; }
+  .btnw:hover { background:linear-gradient(to bottom, #f7e5bd, #dcb56a 60%, #bd9550); }
+  .btnw:active { transform:scale(.97); }
+  .btng { background:rgba(120,134,152,.5); color:#fff; border:0; border-radius:6px; padding:12px 20px; font-size:14px; cursor:pointer; margin:0 8px 8px 0; }
+  .btng:hover { background:rgba(120,134,152,.8); }
+  .btng:active { transform:scale(.97); }
+  .btng.sm { padding:9px 16px; font-size:13px; }
+  .mpg { display:inline-block; width:240px; vertical-align:middle; margin-left:6px; }
+  .mpg .pgb { position:relative; height:4px; }
+  .mpt { color:#aeb8c5; font-size:12px; margin-left:8px; }
+  .dbody { display:flex; padding:14px 40px 6px 40px; }
+  .dl { flex:2; min-width:0; padding-right:40px; }
+  .dr { flex:1; min-width:0; }
+  .plot { line-height:1.6; font-size:14px; color:#ece4d2; margin:8px 0 12px 0; }
+  .lbl { color:#7d8999; }
+  .small { font-size:12.5px; color:#aeb8c5; margin:6px 0; line-height:1.5; }
+  .eph { display:flex; align-items:center; justify-content:space-between; padding:22px 40px 10px 40px; }
+  .ept { font-size:22px; font-weight:700; color:#f1d9a7; }
+  .sel { background:#2c343f; color:#fff; border:1px solid #5a6a7e; padding:8px 12px; font-size:14px; border-radius:6px; }
+  .eps { padding:0 40px 34px 40px; }
+  .ep { display:flex; align-items:center; padding:14px 12px; border-bottom:1px solid #3e4756; cursor:pointer; border-radius:4px; }
+  .ep:hover { background:#2f3947; }
+  .enum { width:44px; min-width:44px; font-size:22px; color:#ddd5c3; text-align:center; }
+  .eth { position:relative; width:170px; min-width:170px; height:96px; background:#2c343f; border-radius:4px; overflow:hidden; margin-right:16px; }
+  .eth img { position:absolute; left:0; top:0; width:100%; height:100%; }
+  .eov { position:absolute; left:0; right:0; top:0; bottom:0; background:rgba(0,0,0,.5); opacity:0; display:flex; align-items:center; justify-content:center; font-size:32px; color:#f1d9a7; }
+  .ep:hover .eov { opacity:1; }
+  .et { flex:1; min-width:0; }
+  .etl { display:flex; justify-content:space-between; margin-bottom:5px; font-size:15px; font-weight:600; }
+  .edu { color:#aeb8c5; font-weight:400; margin-left:12px; white-space:nowrap; }
+  .ed { color:#aeb8c5; font-size:12.5px; line-height:1.4; max-height:36px; overflow:hidden; }
+  .eb { margin-left:12px; text-align:right; white-space:nowrap; }
+  .mini { background:#3a4554; color:#fff; border:0; border-radius:4px; padding:8px 12px; cursor:pointer; margin-left:4px; font-size:12px; }
+  .mini:hover { background:#4f5e72; }
+  .chk { color:#46d369; font-weight:700; margin-right:6px; font-size:12px; }
+
+  /* ---------- ajustes (ocultos) ---------- */
+  #pw { position:absolute; left:0; right:0; top:0; bottom:0; background:rgba(0,0,0,.8); display:none; z-index:85; }
+  #pwbox { position:absolute; left:50%; top:50%; width:380px; margin-left:-190px; margin-top:-120px; background:#232a35; border:1px solid #4a586b; border-radius:12px; padding:24px; text-align:center; }
+  #pwbox h2 { margin:0 0 6px 0; color:#f1d9a7; }
+  #pw_msg { min-height:22px; color:#ff9d8a; margin:2px 0 8px 0; }
+  #cfg { position:absolute; left:0; right:0; top:0; bottom:0; background:rgba(0,0,0,.82); display:none; z-index:80; }
+  #cfgbox { position:absolute; left:50%; top:50%; width:600px; margin-left:-300px; margin-top:-300px; background:#232a35; border:1px solid #4a586b; border-radius:10px; padding:24px; max-height:96%; overflow:auto; }
+  #cfgbox h2 { margin:0 0 14px 0; color:#f1d9a7; }
+  .fr { margin-bottom:12px; }
+  .fr label { display:block; color:#aeb8c5; margin-bottom:4px; }
+  .fr .inp { width:100%; }
+  .warn { background:#4a3a1a; border:1px solid #cfa65c; padding:10px 12px; border-radius:4px; margin-bottom:12px; line-height:1.5; display:none; }
+  .btn { background:linear-gradient(to bottom, #f1d9a7, #cfa65c 60%, #b08843); color:#1a1f27; font-weight:700; border:0; border-radius:6px; padding:11px 20px; cursor:pointer; font-size:14px; margin:0 6px 6px 0; }
+  .btn:hover { background:linear-gradient(to bottom, #f7e5bd, #dcb56a 60%, #bd9550); }
+  .btn.g { background:#3a4554; color:#fff; font-weight:400; }
+  .btn.g:hover { background:#4f5e72; }
+  #c_file { position:absolute; left:-9999px; top:0; width:10px; }
+
+  /* ---------- video de bienvenida ---------- */
+  #intro { position:absolute; left:0; top:0; right:0; bottom:0; background:#000; z-index:200; display:none; cursor:pointer; }
+  #intro video { position:absolute; left:0; top:0; width:100%; height:100%; background:#000; }
+
+  /* ---------- depurar ---------- */
+  #dep { position:absolute; left:0; right:0; top:0; bottom:0; background:rgba(0,0,0,.82); display:none; z-index:90; }
+  #depbox { position:absolute; left:50%; top:50%; width:560px; margin-left:-280px; margin-top:-250px; background:#232a35; border:1px solid #4a586b; border-radius:10px; padding:24px; }
+  #depbox h2 { margin:0 0 10px 0; color:#f1d9a7; }
+  .dprow { display:flex; align-items:center; margin:8px 0; color:#aeb8c5; }
+  .dprow .sel { margin:0 18px 0 8px; }
+  .dpbar { height:10px; background:#3a4554; border-radius:5px; overflow:hidden; margin:14px 0 10px 0; }
+  .dpbar i { display:block; height:100%; width:0; background:#cfa65c; }
+  .dpn { color:#aeb8c5; line-height:1.8; }
+  .dpn b { color:#fff; }
+  #dpMsg { color:#e6dfcf; margin:10px 0 14px 0; line-height:1.5; min-height:38px; }
+  .btn[disabled] { opacity:.4; cursor:default; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div id="lbox">
+    <img id="lLogo" alt="Pirate_TV">
+    <input class="linp" id="l_usr" type="text" placeholder="Usuario" onkeydown="if(event.keyCode==13){ enterUsr(); }">
+    <input class="linp" id="l_pwd" type="password" placeholder="Contrase&ntilde;a" onkeydown="if(event.keyCode==13){ doLogin(); }">
+    <button class="lgo" id="lBtn" onclick="doLogin()">ENTRAR</button>
+    <div id="lmsg"></div>
+  </div>
+  <button class="gearb" id="lgear" onclick="askCfg()" title="Ajustes">&#9881;</button>
+</div>
+
+<div id="app">
+  <div id="bar">
+    <div class="brand" onclick="goHome()" title="Inicio"><img id="bLogo" alt=""><span class="bname">Pirate_TV</span></div>
+    <button class="nb" id="bBack" onclick="goHome()" style="display:none">&#9664; Inicio</button>
+    <span id="bTitle"></span>
+    <span class="sp"></span>
+    <input class="inp" id="q" type="text" placeholder="Buscar en TV, pel&iacute;culas y series..." onkeyup="onSearchKey(event)" oninput="onSearchKey(event)">
+    <button class="nb" id="bCat" onclick="toggleSide()" style="display:none">&#9776; Categor&iacute;as</button>
+    <button class="nb ic" onclick="askCfg()" title="Ajustes">&#9881;</button>
+    <button class="nb" onclick="doLogout()" title="Cerrar sesi&oacute;n">Salir</button>
+  </div>
+
+  <div id="home">
+    <div id="tiles">
+      <div class="tile" onclick="openSection('live')"><img id="tLive" alt="TV en vivo"></div>
+      <div class="tile" onclick="openSection('vod')"><img id="tVod" alt="Pel&iacute;culas"></div>
+      <div class="tile" onclick="openSection('series')"><img id="tSeries" alt="Series"></div>
+    </div>
+  </div>
+
+  <div id="secWrap">
+    <div id="sideBg" onclick="toggleSide()"></div>
+    <div id="side"></div>
+    <div id="content" onscroll="onScroll()">
+      <div id="hero" class="heroSp"></div>
+      <div id="cont"></div>
+      <div class="secT" id="secT"></div>
+      <div class="grid" id="grid"></div>
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+
+  <div id="sres"></div>
+
+  <div id="status">Listo.</div>
+</div>
+
+<div id="modal">
+  <button id="mclose" onclick="closeDetail()">&#10005;</button>
+  <div id="mbox">
+    <div id="vbox"><video id="v" controls></video></div>
+    <div id="mBody"></div>
+  </div>
+</div>
+
+<div id="intro"><video id="introV" preload="auto"></video></div>
+
+<div id="pw">
+  <div id="pwbox">
+    <h2>Ajustes</h2>
+    <div class="small">Escribe la contrase&ntilde;a para continuar.</div>
+    <input class="linp" id="pw_in" type="password" style="margin-top:14px" onkeydown="if(event.keyCode==13){ checkPw(); }">
+    <div id="pw_msg"></div>
+    <button class="btn" onclick="checkPw()">Aceptar</button>
+    <button class="btn g" onclick="closePw()">Cancelar</button>
+  </div>
+</div>
+
+<div id="cfg">
+  <div id="cfgbox">
+    <h2>Ajustes</h2>
+    <div class="warn" id="cfgWarn"></div>
+    <div class="fr"><label>Servidor</label><input class="inp" id="c_srv" type="text"></div>
+    <div class="fr"><label>Reproductor externo (VLC recomendado; tambi&eacute;n sirve MPC-HC, PotPlayer o mpv)</label>
+      <input class="inp" id="c_vlc" type="text">
+      <div style="margin-top:6px">
+        <button class="btn g" onclick="$('c_file').click()">Examinar...</button>
+        <button class="btn g" onclick="autoDetect()">Detectar autom&aacute;ticamente</button>
+        <button class="btn g" onclick="openUrl('https://www.videolan.org/vlc/')">Descargar VLC</button>
+        <button class="btn g" onclick="installVlc()">Instalar VLC aqu&iacute; (autom&aacute;tico)</button>
+        <input type="file" id="c_file" onchange="pickExe()">
+      </div>
+    </div>
+    <div class="fr"><label>Formato de TV en vivo</label>
+      <select class="inp" id="c_ext"><option value="ts">.ts</option><option value="m3u8">.m3u8</option></select></div>
+    <div class="fr"><label>Clave OMDb (gratis en omdbapi.com) &ndash; trae la sinopsis, la nota de IMDb y la puntuaci&oacute;n de Rotten Tomatoes</label><input class="inp" id="c_omdb" type="text"></div>
+    <div class="fr" id="toolRow"><label>Herramientas de lista</label>
+      <select class="inp" id="c_tool"><option value="live">TV en vivo</option><option value="vod" selected>Pel&iacute;culas</option><option value="series">Series</option></select>
+      <button class="btn g" onclick="exportList()">Exportar .m3u8</button>
+      <button class="btn g" onclick="openDep()">Depurar enlaces</button>
+      <div class="small" id="cfgNote"></div>
+    </div>
+    <div class="small">El progreso (d&oacute;nde te quedaste) se guarda autom&aacute;ticamente solo cuando usas VLC.</div>
+    <div style="margin-top:14px">
+      <button class="btn" onclick="applyCfg()">Guardar</button>
+      <button class="btn g" onclick="closeCfg()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="dep">
+  <div id="depbox">
+    <h2 id="dpTitle">Depurar</h2>
+    <div class="small">Revisa todos los enlaces de esta pesta&ntilde;a (todas las categor&iacute;as) y quita del listado los que no responden. Es 100% nativo: no usa ffmpeg ni VLC.</div>
+    <div class="dprow">Conexiones a la vez:
+      <select class="sel" id="dpConc"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option></select>
+      Tiempo m&aacute;ximo por enlace:
+      <select class="sel" id="dpTmo"><option value="4">4 s</option><option value="6" selected>6 s</option><option value="8">8 s</option><option value="12">12 s</option></select>
+    </div>
+    <div class="dprow"><label><input type="checkbox" id="dpAgain" checked> Confirmar los ca&iacute;dos con una 2.&ordf; revisi&oacute;n (m&aacute;s seguro; desm&aacute;rcalo para ir m&aacute;s r&aacute;pido)</label></div>
+    <div class="dpbar"><i id="dpBar"></i></div>
+    <div class="dpn">Revisados: <b id="dpDone">0 / 0</b> &nbsp;|&nbsp; En l&iacute;nea: <b id="dpOk">0</b> &nbsp;|&nbsp; Ca&iacute;dos: <b id="dpBad">0</b> &nbsp;|&nbsp; Sin verificar: <b id="dpUnk">0</b><br>
+      Velocidad: <b id="dpSpd">-</b></div>
+    <div id="dpMsg"></div>
+    <button class="btn" id="dpStart" onclick="startDep()">Iniciar</button>
+    <button class="btn g" id="dpStop" onclick="stopDep()" disabled>Detener</button>
+    <button class="btn g" id="dpRestore" onclick="restoreDep()">Restaurar quitados</button>
+    <button class="btn g" onclick="closeDep()">Cerrar</button>
+  </div>
+</div>
+
+<script type="text/javascript">
+var IMG = {"live": "data:...B64...", "vod": "data:...B64...", "series": "data:...B64...", "logo": "data:...B64...", "logoS": "data:...B64..."};
+</script>
+
+<script type="text/javascript">
+var fso = new ActiveXObject("Scripting.FileSystemObject");
+var sh  = new ActiveXObject("WScript.Shell");
+
+var base = "", user = "", pass = "", ns = "";
+var mode = "vod";
+var cats = [], catCache = {}, all = [], view = [], shown = 0, curCat = -9, PAGE = 60;
+var cfg = { srv:"http://sdmx.vip:80", usr:"", pwd:"", vlc:"", liveExt:"ts", omdb:"" };
+var imdbCache = {}, prog = {}, last = {};
+var D = null, tok = 0, loadTok = 0, heroTok = 0, heroData = null, heroItem = null;
+var contList = [], sess = null, hereCtx = null, hereT = 0, saveT = 0;
+
+/* =====================================================================
+   PIRATE_TV : pantallas, inicio de sesion, indice global y buscador
+   ===================================================================== */
+var DEFAULT_SRV = "http://sdmx.vip:80", CFG_PASS = "3623";
+var scr = "login", prevScr = "home", loginTok = 0, loginBusy = false;
+var IDX = {}, IDXST = {}, IDXW = {}, CATN = {}, CATCNT = {}, SR = {}, SSHOW = {}, SWAIT = {};
+var SQ = "", SF = "all", sTmr = null;
+var MODES = ["live", "vod", "series"];
+var PUNCT = /[\-_.:,;!?'"()\[\]|\/\\&+*#@~`\u00b4\u2018\u2019\u201c\u201d]+/g;
+var FROMC = "\u00e1\u00e0\u00e4\u00e2\u00e3\u00e9\u00e8\u00eb\u00ea\u00ed\u00ec\u00ef\u00ee\u00f3\u00f2\u00f6\u00f4\u00f5\u00fa\u00f9\u00fc\u00fb\u00f1\u00e7";
+var TOC   = "aaaaaeeeeiiiiooooouuuunc";
+
+function resetIndex(){
+  for(var i=0;i<3;i++){
+    var m = MODES[i];
+    IDX[m] = null; IDXST[m] = 0; IDXW[m] = []; CATN[m] = {}; CATCNT[m] = {}; SR[m] = []; SSHOW[m] = 48; SWAIT[m] = 0;
+  }
+}
+resetIndex();
+
+function fold(s){
+  s = String(s == null ? "" : s).toLowerCase();
+  return s.replace(/[\u00e0-\u00ff]/g, function(c){ var i = FROMC.indexOf(c); return i > -1 ? TOC.charAt(i) : c; });
+}
+function keyOf(s){ return fold(s).replace(PUNCT, " ").replace(/\s+/g, " ").replace(/^ | $/g, ""); }
+function tokens(q){ var k = keyOf(q); return k ? k.split(" ") : []; }
+function lmsg(t){ $("lmsg").innerText = t; }
+
+function setScr(s){
+  scr = s;
+  var lg = (s == "login");
+  $("login").style.display = lg ? "block" : "none";
+  $("app").style.display = lg ? "none" : "block";
+  $("home").style.display = (s == "home") ? "block" : "none";
+  $("secWrap").style.display = (s == "sec") ? "block" : "none";
+  $("sres").style.display = (s == "search") ? "block" : "none";
+  $("bBack").style.display = (s == "sec" || s == "search") ? "inline-block" : "none";
+  $("bCat").style.display = (s == "sec") ? "inline-block" : "none";
+  $("bTitle").innerText = (s == "sec") ? modeLabel(mode) : (s == "search" ? "B\u00fasqueda" : "");
+  if(s != "sec") closeSide();
+}
+function goHome(){ if(scr == "login") return; $("q").value = ""; clearTimeout(sTmr); setScr("home"); }
+
+/* ---------- ajustes ocultos (engrane + contrase\u00f1a) ---------- */
+function askCfg(){
+  $("pw_in").value = ""; $("pw_msg").innerText = ""; $("pw").style.display = "block";
+  try{ $("pw_in").focus(); }catch(e){}
+}
+function closePw(){ $("pw").style.display = "none"; }
+function checkPw(){
+  if($("pw_in").value == CFG_PASS){ closePw(); openCfg(); }
+  else { $("pw_msg").innerText = "Contrase\u00f1a incorrecta."; $("pw_in").value = ""; try{ $("pw_in").focus(); }catch(e){} }
+}
+function tmode(){ return $("c_tool").value; }
+
+
+/* ---------- video de bienvenida a pantalla completa (despues del login) ---------- */
+var INTRO = null, INTRO_FILE = "Pirate_TV_intro.mp4";
+function playIntro(){
+  var box = $("intro"), v = $("introV"), fin = false, tm = null, ok = false;
+  try{ ok = fso.FileExists(appFolder() + "\\" + INTRO_FILE); }catch(e){}
+  if(!ok) return;
+  function end(){
+    if(fin) return; fin = true; INTRO = null;
+    try{ clearTimeout(tm); }catch(e){}
+    try{ v.onended = null; v.onerror = null; v.pause(); v.removeAttribute("src"); v.load(); }catch(e){}
+    box.style.display = "none";
+  }
+  INTRO = end;
+  box.style.display = "block";
+  box.onclick = end; v.onended = end; v.onerror = end;
+  tm = setTimeout(end, 30000);
+  try{ v.src = INTRO_FILE; v.load(); v.play(); }catch(e){ end(); }
+}
+
+/* ---------- login / logout ---------- */
+function enterUsr(){ if($("l_pwd").value) doLogin(); else $("l_pwd").focus(); }
+function doLogin(){
+  if(loginBusy) return;
+  var u = $("l_usr").value.replace(/^\s+|\s+$/g, ""), p = $("l_pwd").value;
+  if(!u || !p){ lmsg("Escribe tu usuario y tu contrase\u00f1a."); return; }
+  cfg.usr = u; cfg.pwd = p;
+  loginBusy = true; $("lBtn").disabled = true; lmsg("Conectando...");
+  login(function(ok){
+    loginBusy = false; $("lBtn").disabled = false;
+    if(ok){ lmsg(""); $("q").value = ""; setScr("home"); prefetch(); playIntro(); }
+  });
+}
+function login(cb){
+  base = (cfg.srv || DEFAULT_SRV).replace(/\s+/g, "");
+  if(!/^https?:\/\//i.test(base)) base = "http://" + base;
+  base = base.replace(/\/+$/, "");
+  user = cfg.usr; pass = cfg.pwd;
+  ns = hash(base + "|" + user);
+  catCache = {}; loginTok++; resetIndex();
+  api(null, "", function(d){
+    if(!d || !d.user_info || String(d.user_info.auth) != "1"){ base = ""; lmsg("Usuario o contrase\u00f1a incorrectos."); cb(false); return; }
+    var ui = d.user_info, t = "Conectado";
+    if(ui.exp_date){ t += "  |  Vence: " + new Date(parseInt(ui.exp_date,10)*1000).toLocaleDateString(); }
+    if(ui.max_connections) t += "  |  Conexiones: " + ui.active_cons + "/" + ui.max_connections;
+    maxCons = parseInt(ui.max_connections,10) || 0;
+    saveCfg();
+    st(t); cb(true);
+  }, function(msg){ base = ""; lmsg("No se pudo conectar con el servidor (" + msg + ")."); cb(false); });
+}
+function doLogout(){
+  try{ closeDetail(); }catch(e){}
+  try{ endSession(true); }catch(e){}
+  loginTok++; base = ""; resetIndex(); heroData = null; contList = []; clearTimeout(sTmr);
+  cfg.pwd = ""; saveCfg();
+  $("l_pwd").value = ""; $("q").value = "";
+  $("grid").innerHTML = ""; $("cont").innerHTML = ""; $("sres").innerHTML = ""; $("secT").innerText = "";
+  setScr("login"); lmsg("");
+  try{ $("l_pwd").focus(); }catch(e){}
+}
+
+/* ---------- indice global (todo el contenido en memoria) ---------- */
+function flushW(m, ok){ var w = IDXW[m], i; IDXW[m] = []; for(i=0;i<w.length;i++){ try{ w[i](ok); }catch(e){} } }
+function byRating(a, b){ return (b.rating - a.rating) || (b.added - a.added); }
+function buildIndex(m, d){
+  var arr = [], cnt = {}, i, o, it, b;
+  if(d instanceof Array){
+    for(i=0;i<d.length;i++){
+      o = d[i];
+      if(m == "series"){
+        b = o.backdrop_path;
+        it = { m:m, name:o.name, sid:o.series_id, img:V(o.cover), rating:parseFloat(o.rating)||0, added:parseInt(o.last_modified,10)||0,
+               plot:V(o.plot).substring(0,300), bg:(b instanceof Array) ? (b[0] || "") : V(b), cid:String(o.category_id) };
+      } else {
+        it = { m:m, name:o.name, sid:o.stream_id, img:V(o.stream_icon), rating:parseFloat(o.rating)||0, added:parseInt(o.added,10)||0,
+               ext:V(o.container_extension), cid:String(o.category_id) };
+      }
+      it.nl = keyOf(it.name);
+      cnt[it.cid] = (cnt[it.cid] || 0) + 1;
+      arr.push(it);
+    }
+  }
+  if(m != "live") arr.sort(byRating);      /* mejor calificadas primero */
+  IDX[m] = arr; CATCNT[m] = cnt;
+}
+function loadIndex(m, cb){
+  if(IDXST[m] == 2){ if(cb) cb(true); return; }
+  if(IDXST[m] == 3) IDXST[m] = 0;
+  if(cb) IDXW[m].push(cb);
+  if(IDXST[m] == 1) return;
+  IDXST[m] = 1;
+  var tk = loginTok;
+  st("Cargando " + modeLabel(m).toLowerCase() + "...");
+  catNames(m, function(cm){
+    if(tk != loginTok) return;
+    CATN[m] = cm;
+    apiTry(A[m].list, "", function(d){
+      if(tk != loginTok) return;
+      buildIndex(m, d); IDXST[m] = 2;
+      st(modeLabel(m) + ": " + IDX[m].length + " t\u00edtulos listos para buscar");
+      flushW(m, true);
+    }, function(msg){
+      if(tk != loginTok) return;
+      IDXST[m] = 3; st("No se pudo cargar " + modeLabel(m).toLowerCase() + " (" + msg + ")"); flushW(m, false);
+    });
+  });
+}
+function prefetch(){
+  var q = ["vod", "series", "live"], tk = loginTok;
+  (function next(){
+    if(tk != loginTok || !q.length) return;
+    var m = q.shift();
+    loadIndex(m, function(){ next(); });
+  })();
+}
+
+/* ---------- secciones ---------- */
+function openSection(m){
+  mode = m; curCat = -9; setScr("sec"); closeSide();
+  var t = ++loadTok; heroTok++; heroData = null; paintHero();
+  $("grid").innerHTML = ""; $("cont").innerHTML = ""; $("secT").innerText = "";
+  $("msg").innerHTML = "Cargando " + esc(modeLabel(m).toLowerCase()) + "... (la primera vez puede tardar un poco)";
+  $("content").scrollTop = 0;
+  loadIndex(m, function(ok){
+    if(t != loadTok || mode != m) return;
+    if(!ok){ $("msg").innerHTML = 'No se pudo cargar la lista. <button class="btng sm" onclick="openSection(\'' + m + '\')">Reintentar</button>'; return; }
+    cats = (catCache[m] || []).filter(function(c){ return (CATCNT[m][String(c.category_id)] || 0) > 0; });
+    renderCats(); selCat(-1);
+  });
+}
+function renderCats(){
+  var cn = CATCNT[mode] || {}, tot = IDX[mode] ? IDX[mode].length : 0, i;
+  var h = ['<div class="cat' + (curCat==-1 ? ' on' : '') + '" onclick="selCat(-1)"><span class="cn"><b>Todas</b></span><span class="cc">' + tot + '</span></div>'];
+  for(i=0;i<cats.length;i++){
+    h.push('<div class="cat' + (i==curCat ? ' on' : '') + '" onclick="selCat(' + i + ')" title="' + esc(cats[i].category_name) + '"><span class="cn">' +
+           esc(cats[i].category_name) + '</span><span class="cc">' + (cn[String(cats[i].category_id)] || 0) + '</span></div>');
+  }
+  $("side").innerHTML = h.join("");
+}
+function selCat(i){
+  curCat = i; renderCats(); closeSide();
+  heroTok++; heroData = null; paintHero();
+  var src = IDX[mode] || [], cid = (i >= 0 && cats[i]) ? String(cats[i].category_id) : null, out = [], k, it;
+  for(k=0;k<src.length;k++){
+    it = src[k];
+    if(cid !== null && it.cid !== cid) continue;
+    if(mode != "series" && isDead(mode, it.sid)) continue;
+    out.push(it);
+  }
+  all = out; view = out;
+  $("content").scrollTop = 0;
+  renderGrid(); showHero(); renderCont();
+  st(view.length + " t\u00edtulos");
+}
+function cardHtml(it, m, click, showCat){
+  var lv = (m == "live"), extra = "", pc = 0, p, l, rt, cat = "";
+  if(!lv && it.rating > 0) extra += '<div class="bd">&#9733; ' + it.rating.toFixed(1) + '</div>';
+  if(m == "vod"){
+    p = prog[mkKey(it.sid)]; pc = pct(p);
+    if(p && p.w) extra += '<div class="wb">&#10003;</div>';
+    else if(pc > 0) extra += '<div class="pgb" style="display:block"><i style="width:' + pc + '%"></i></div>';
+  } else if(m == "series"){
+    l = last[skKey(it.sid)];
+    if(l){ pc = pct(prog[ekKey(l.epId)]); if(pc > 0) extra += '<div class="pgb" style="display:block"><i style="width:' + pc + '%"></i></div>'; }
+  }
+  if(!lv){ rt = rtOf(it, m); if(rt) extra += '<div class="rtb' + (parseInt(rt,10) < 60 ? ' rot' : '') + '">RT ' + esc(rt) + '</div>'; }
+  if(showCat) cat = (CATN[m] && CATN[m][it.cid]) ? CATN[m][it.cid] : "";
+  return '<div class="card' + (lv ? ' lv' : '') + '" onclick="' + click + '" title="' + esc(it.name) + '">' +
+         '<div class="poster">' + posterImg(it.img, it.name) + extra + '<div class="ov">&#9654;</div></div>' +
+         '<div class="ct">' + esc(it.name) + '</div>' + (cat ? '<div class="cs">' + esc(cat) + '</div>' : '') + '</div>';
+}
+function rtOf(it, m){
+  var c = cleanTitle(it.name), r = imdbCache[m + "|" + c.title.toLowerCase() + "|" + (c.year || "")];
+  return (r && r.rt) ? r.rt : "";
+}
+function clickItem(i){
+  var it = view[i]; if(!it) return;
+  if(mode == "live") playLive(it); else openDetail(it, mode);
+}
+function playLive(it){
+  playExternal(base + "/live/" + user + "/" + pass + "/" + it.sid + "." + (cfg.liveExt || "ts"), it.name, null);
+}
+
+/* ---------- buscador global ---------- */
+function onSearchKey(e){
+  var k = e ? e.keyCode : 0;
+  if(k == 27){ clearSearch(); return; }
+  clearTimeout(sTmr);
+  sTmr = setTimeout(function(){ runSearch(false); }, (k == 13) ? 0 : 250);
+}
+function clearSearch(){ clearTimeout(sTmr); $("q").value = ""; leaveSearch(); }
+function leaveSearch(){ if(scr != "search") return; $("q").value = ""; setScr(prevScr == "sec" ? "sec" : "home"); }
+function needIdx(m){
+  if(IDXST[m] == 2 || IDXST[m] == 3 || SWAIT[m]) return;
+  SWAIT[m] = 1;
+  loadIndex(m, function(ok){ SWAIT[m] = 0; if(ok && scr == "search") runSearch(true); });
+}
+function retryIdx(m){ IDXST[m] = 0; needIdx(m); renderSearch(true); }
+function runSearch(keep){
+  var tk = tokens($("q").value), i, j, k, m, src, it, ok, out;
+  if(!tk.length){ if(scr == "search") leaveSearch(); return; }
+  if(scr == "login") return;
+  if(scr != "search"){ prevScr = scr; setScr("search"); }
+  SQ = $("q").value.replace(/^\s+|\s+$/g, "");
+  for(i=0;i<3;i++){
+    m = MODES[i]; out = [];
+    if(IDXST[m] == 2){
+      src = IDX[m];
+      for(j=0;j<src.length;j++){
+        it = src[j]; ok = true;
+        for(k=0;k<tk.length;k++){ if(it.nl.indexOf(tk[k]) < 0){ ok = false; break; } }
+        if(!ok) continue;
+        if(m != "series" && isDead(m, it.sid)) continue;
+        out.push(it);
+      }
+    } else needIdx(m);
+    SR[m] = out;
+    if(!keep) SSHOW[m] = 48;
+  }
+  renderSearch(!!keep);
+}
+function setSF(f){ SF = f; renderSearch(false); }
+function moreRes(m){ SSHOW[m] += 60; renderSearch(true); }
+function clickRes(m, i){
+  var it = SR[m][i]; if(!it) return;
+  if(m == "live") playLive(it); else openDetail(it, m);
+}
+function renderSearch(keep){
+  var el = $("sres"), top = keep ? el.scrollTop : 0, h = [], i, j, m, n, tot = 0, ready = 0, shown, stt, lab;
+  for(i=0;i<3;i++){ tot += SR[MODES[i]].length; if(IDXST[MODES[i]] == 2) ready++; }
+  function chip(f, label, cnt){
+    return '<span class="sch' + (SF == f ? ' on' : '') + '" onclick="setSF(\'' + f + '\')">' + label + '<span class="n">' + cnt + '</span></span>';
+  }
+  function cntOf(m){ return IDXST[m] == 2 ? SR[m].length : "..."; }
+  h.push('<div class="srT">Resultados para <b>&ldquo;' + esc(SQ) + '&rdquo;</b></div>');
+  h.push('<div class="schips">' + chip("all", "Todo", ready == 3 ? tot : (tot + "+")) + chip("live", "TV en vivo", cntOf("live")) +
+         chip("vod", "Pel&iacute;culas", cntOf("vod")) + chip("series", "Series", cntOf("series")) + '</div>');
+  for(i=0;i<3;i++){
+    m = MODES[i];
+    if(SF != "all" && SF != m) continue;
+    n = SR[m].length; stt = IDXST[m]; lab = modeLabel(m);
+    if(SF == "all" && stt == 2 && !n) continue;
+    h.push('<div class="secT">' + esc(lab) + ' <span class="cnt">' + (stt == 2 ? n : "...") + '</span></div>');
+    if(stt == 0 || stt == 1){ h.push('<div class="msg">Cargando ' + esc(lab.toLowerCase()) + '... los resultados aparecer&aacute;n solos.</div>'); continue; }
+    if(stt == 3){ h.push('<div class="msg">No se pudo cargar. <button class="btng sm" onclick="retryIdx(\'' + m + '\')">Reintentar</button></div>'); continue; }
+    if(!n){ h.push('<div class="msg">Sin resultados en ' + esc(lab.toLowerCase()) + '.</div>'); continue; }
+    shown = Math.min(n, SSHOW[m]);
+    h.push('<div class="grid">');
+    for(j=0;j<shown;j++) h.push(cardHtml(SR[m][j], m, "clickRes('" + m + "'," + j + ")", true));
+    h.push('</div>');
+    if(shown < n) h.push('<button class="more" onclick="moreRes(\'' + m + '\')">Mostrar m\u00e1s (' + (n - shown) + ' restantes)</button>');
+  }
+  if(ready == 3 && !tot) h.push('<div class="msg">No encontr\u00e9 nada con esa b\u00fasqueda.</div>');
+  el.innerHTML = h.join("");
+  el.scrollTop = top;
+  st(ready == 3 ? (tot + " resultados") : "Buscando... (a\u00fan cargando algunas listas)");
+}
+
+/* ---------- arrastrar con el mouse como si fuera touch ---------- */
+var DR = { on:false, v:null, h:null, x:0, y:0, sx:0, sy:0, moved:false, cancel:false };
+function dragInit(){
+  var VID = { content:1, sres:1, side:1, mbox:1, cfgbox:1 };
+  document.addEventListener("mousedown", function(e){
+    if(e.button != 0) return;
+    var t = e.target, tag = String(t.tagName || "").toUpperCase(), v = null, h = null, n = t;
+    if(tag == "INPUT" || tag == "SELECT" || tag == "TEXTAREA" || tag == "VIDEO" || tag == "OPTION") return;
+    while(n && n.nodeType == 1){
+      if(!h && /(^|\s)crow(\s|$)/.test(n.className || "")) h = n;
+      if(!v && n.id && VID[n.id]){ v = n; break; }
+      n = n.parentNode;
+    }
+    if(!v && !h) return;
+    DR.on = true; DR.v = v; DR.h = h; DR.x = e.clientX; DR.y = e.clientY;
+    DR.sx = h ? h.scrollLeft : 0; DR.sy = v ? v.scrollTop : 0; DR.moved = false;
+  }, false);
+  document.addEventListener("mousemove", function(e){
+    if(!DR.on) return;
+    var dx = e.clientX - DR.x, dy = e.clientY - DR.y;
+    if(!DR.moved && Math.abs(dx) + Math.abs(dy) < 8) return;
+    DR.moved = true;
+    if(DR.v) DR.v.scrollTop = DR.sy - dy;
+    if(DR.h) DR.h.scrollLeft = DR.sx - dx;
+    try{ e.preventDefault(); }catch(x){}
+  }, false);
+  document.addEventListener("mouseup", function(){
+    if(!DR.on) return;
+    DR.on = false;
+    if(DR.moved){ DR.cancel = true; setTimeout(function(){ DR.cancel = false; }, 50); }
+  }, false);
+  document.addEventListener("click", function(e){
+    if(DR.cancel){ DR.cancel = false; e.stopPropagation(); e.preventDefault(); }
+  }, true);
+}
+
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function st(t){
+  $("status").innerText = t;
+  if(scr == "login") lmsg(t);
+  try{ if($("cfg").style.display == "block") $("cfgNote").innerText = t; }catch(e){}
+}
+function V(x){ if(x==null) return ""; x = String(x); return (x=="N/A" || x=="null" || x=="undefined") ? "" : x; }
+function two(n){ return (n<10 ? "0" : "") + n; }
+function fmt(s){ s = Math.floor(s); var h = Math.floor(s/3600), m = Math.floor((s%3600)/60), x = s%60; return (h>0 ? h + ":" + two(m) : "" + m) + ":" + two(x); }
+function hash(s){ var h = 5381; for(var i=0;i<s.length;i++){ h = ((h<<5) + h + s.charCodeAt(i)) | 0; } return (h>>>0).toString(36); }
+function mkKey(sid){ return "m" + ns + ":" + sid; }
+function ekKey(id){ return "e" + ns + ":" + id; }
+function skKey(sid){ return "s" + ns + ":" + sid; }
+function pct(p){ if(!p) return 0; if(p.w) return 100; if(p.d > 0) return Math.min(100, Math.round(p.t*100/p.d)); return 0; }
+function bubble(){ try{ event.cancelBubble = true; }catch(e){} }
+
+/* ---------- archivos ---------- */
+function appFolder(){
+  var p = decodeURI(location.pathname).replace(/^\//,"").replace(/\//g,"\\");
+  return p.substring(0, p.lastIndexOf("\\"));
+}
+function cfgPath(){ return appFolder() + "\\pirate_tv_config.json"; }
+function oldCfgPath(){ return appFolder() + "\\xtream_config.json"; }
+function cachePath(){ return appFolder() + "\\imdb_cache.json"; }
+function progPath(){ return appFolder() + "\\progress.json"; }
+function writeU(path, text){ var f = fso.CreateTextFile(path, true, true); f.Write(text); f.Close(); }
+function readU(path){
+  if(!fso.FileExists(path)) return null;
+  var f = fso.OpenTextFile(path, 1, false, -1); var t = f.ReadAll(); f.Close(); return t;
+}
+function saveCfg(){ try{ writeU(cfgPath(), JSON.stringify(cfg)); }catch(e){ st("No se pudo guardar la config: " + e.message); } }
+function saveCache(){ try{ writeU(cachePath(), JSON.stringify(imdbCache)); }catch(e){} }
+function saveProg(force){
+  var n = new Date().getTime();
+  if(!force && n - saveT < 12000) return;
+  saveT = n;
+  try{ writeU(progPath(), JSON.stringify({ prog:prog, last:last })); }catch(e){}
+}
+function loadAll(){
+  var migrated = false;
+  try{
+    var t = readU(cfgPath());
+    if(!t){ t = readU(oldCfgPath()); migrated = !!t; }
+    if(t){ var o = JSON.parse(t); for(var k in o){ if(o.hasOwnProperty(k)) cfg[k] = o[k]; } }
+  }catch(e){}
+  if(migrated || !cfg.srv) cfg.srv = DEFAULT_SRV;
+  try{ var c = readU(cachePath()); if(c) imdbCache = JSON.parse(c); }catch(e){ imdbCache = {}; }
+  try{ var p = readU(progPath()); if(p){ var q = JSON.parse(p); prog = q.prog || {}; last = q.last || {}; } }catch(e){ prog = {}; last = {}; }
+  try{ var dd = readU(deadPath()); if(dd) dead = JSON.parse(dd); }catch(e){ dead = {}; }
+  if(!cfg.vlc || !fso.FileExists(cfg.vlc)){ var f = findPlayer(); if(f) cfg.vlc = f; }
+}
+
+/* ---------- deteccion de reproductor ---------- */
+function regRead(k){ try{ return sh.RegRead(k); }catch(e){ return ""; } }
+function candidates(){
+  var c = [], r, i;
+  r = portableVlc(); if(r) c.push(r);
+  var keys = [
+    "HKLM\\SOFTWARE\\VideoLAN\\VLC\\InstallDir",
+    "HKLM\\SOFTWARE\\WOW6432Node\\VideoLAN\\VLC\\InstallDir",
+    "HKCU\\SOFTWARE\\VideoLAN\\VLC\\InstallDir"
+  ];
+  for(i=0;i<keys.length;i++){ r = regRead(keys[i]); if(r) c.push(String(r).replace(/\\$/,"") + "\\vlc.exe"); }
+  r = regRead("HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\vlc.exe\\"); if(r) c.push(r);
+  c.push("C:\\Program Files\\VideoLAN\\VLC\\vlc.exe");
+  c.push("C:\\Program Files (x86)\\VideoLAN\\VLC\\vlc.exe");
+  try{ c.push(sh.ExpandEnvironmentStrings("%LOCALAPPDATA%") + "\\Programs\\VideoLAN\\VLC\\vlc.exe"); }catch(e){}
+  c.push("C:\\Program Files\\MPC-HC\\mpc-hc64.exe");
+  c.push("C:\\Program Files (x86)\\MPC-HC\\mpc-hc.exe");
+  c.push("C:\\Program Files\\MPC-BE x64\\mpc-be64.exe");
+  c.push("C:\\Program Files\\DAUM\\PotPlayer\\PotPlayerMini64.exe");
+  c.push("C:\\Program Files\\mpv\\mpv.exe");
+  return c;
+}
+function findPlayer(){
+  var c = candidates();
+  for(var i=0;i<c.length;i++){ try{ if(c[i] && fso.FileExists(c[i])) return c[i]; }catch(e){} }
+  return "";
+}
+function getPlayer(){
+  var p = cfg.vlc;
+  if(p && fso.FileExists(p)) return p;
+  var f = findPlayer();
+  if(f){ cfg.vlc = f; saveCfg(); st("Reproductor detectado: " + f); return f; }
+  openCfg("No encontr\u00e9 VLC (ni otro reproductor compatible) en esta PC.<br>Inst\u00e1lalo con el bot\u00f3n <b>Descargar VLC</b>, o si ya lo tienes elige el archivo <b>vlc.exe</b> con <b>Examinar...</b>");
+  return "";
+}
+function autoDetect(){
+  var f = findPlayer();
+  if(f){ $("c_vlc").value = f; $("cfgWarn").style.display = "none"; st("Detectado: " + f); }
+  else { $("cfgWarn").innerHTML = "No encontr\u00e9 ning\u00fan reproductor instalado. Descarga VLC o elige el .exe con Examinar."; $("cfgWarn").style.display = "block"; }
+}
+function pickExe(){
+  var v = $("c_file").value;
+  if(v){
+    if(/fakepath/i.test(v)) st("Tu sistema ocult\u00f3 la ruta completa. Escr\u00edbela a mano en el campo.");
+    else $("c_vlc").value = v;
+  }
+}
+function openUrl(u){ try{ sh.Run('cmd /c start "" "' + u + '"', 0, false); }catch(e){} }
+
+/* ---------- ajustes ---------- */
+function openCfg(warn){
+  $("c_srv").value = cfg.srv || DEFAULT_SRV;
+  $("c_vlc").value = cfg.vlc; $("c_ext").value = cfg.liveExt || "ts"; $("c_omdb").value = cfg.omdb || "";
+  $("toolRow").style.display = base ? "block" : "none";
+  $("cfgNote").innerText = "";
+  if(warn && typeof warn == "string"){ $("cfgWarn").innerHTML = warn; $("cfgWarn").style.display = "block"; }
+  else $("cfgWarn").style.display = "none";
+  $("cfg").style.display = "block";
+}
+function closeCfg(){ $("cfg").style.display = "none"; }
+function applyCfg(){
+  var old = cfg.srv;
+  cfg.srv = $("c_srv").value.replace(/\s+/g, "") || DEFAULT_SRV;
+  cfg.vlc = $("c_vlc").value; cfg.liveExt = $("c_ext").value; cfg.omdb = $("c_omdb").value.replace(/\s+/g, "");
+  saveCfg(); closeCfg();
+  if(base && cfg.srv != old){ doLogout(); lmsg("Servidor cambiado: inicia sesi\u00f3n de nuevo."); }
+}
+
+/* ---------- HTTP ---------- */
+function http(url, ok, fail){
+  var x;
+  try{ x = new XMLHttpRequest(); }catch(e){ x = new ActiveXObject("MSXML2.XMLHTTP"); }
+  x.open("GET", url + (url.indexOf("?")>-1 ? "&" : "?") + "_=" + new Date().getTime(), true);
+  try{ x.timeout = 240000; }catch(e){}
+  x.onreadystatechange = function(){
+    if(x.readyState == 4){
+      if(x.status == 200){ ok(x.responseText); }
+      else { if(fail) fail("HTTP " + x.status); }
+    }
+  };
+  try{ x.send(); }catch(e){ if(fail) fail(e.message); }
+}
+function api(action, extra, ok, bad){
+  var u = base + "/player_api.php?username=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass);
+  if(action) u += "&action=" + action;
+  if(extra) u += extra;
+  http(u, function(t){
+    var d; try{ d = JSON.parse(t); }catch(e){ if(bad) bad("respuesta inv\u00e1lida"); else st("Respuesta inv\u00e1lida del servidor."); return; }
+    ok(d);
+  }, function(m){ if(bad) bad(m); else st("Error de conexi\u00f3n con el servidor (" + m + ")"); });
+}
+
+/* ---------- login ---------- */
+
+
+/* ---------- categorias ---------- */
+var A = {
+  live:   { cat:"get_live_categories",   list:"get_live_streams" },
+  vod:    { cat:"get_vod_categories",    list:"get_vod_streams" },
+  series: { cat:"get_series_categories", list:"get_series" }
+};
+function toggleSide(){
+  var open = ($("side").className == "open");
+  $("side").className = open ? "" : "open";
+  $("sideBg").style.display = open ? "none" : "block";
+}
+function closeSide(){ $("side").className = ""; $("sideBg").style.display = "none"; }
+
+
+
+
+/* ---------- listas ---------- */
+
+
+
+
+function renderGrid(){
+  var g = $("grid"); g.innerHTML = ""; shown = 0;
+  var name = (curCat >= 0 && cats[curCat]) ? cats[curCat].category_name : "Todas las categor\u00edas";
+  $("secT").innerHTML = esc(name) + ' <span class="cnt">' + view.length + '</span>';
+  if(!view.length){ $("msg").innerText = "Sin resultados."; return; }
+  $("msg").innerText = "";
+  appendChunk();
+}
+function appendChunk(){
+  var g = $("grid");
+  var end = Math.min(view.length, shown + PAGE), h = [];
+  for(var i=shown;i<end;i++) h.push(cardHtml(view[i], mode, "clickItem(" + i + ")", false));
+  shown = end;
+  g.insertAdjacentHTML("beforeend", h.join(""));
+}
+function onScroll(){
+  var c = $("content");
+  if(shown < view.length && c.scrollTop + c.clientHeight >= c.scrollHeight - 500) appendChunk();
+}
+function posterImg(img, name){
+  var ph = '<div class="ph" style="display:' + (img ? 'none' : 'block') + '">' + esc(name) + '</div>';
+  var im = img ? '<img src="' + esc(img) + '" onerror="this.style.display=\'none\';this.parentNode.firstChild.style.display=\'block\'">' : '';
+  return ph + im;
+}
+
+
+
+/* ---------- banner principal ---------- */
+function showHero(){
+  heroData = null; paintHero();
+  if(mode == "live" || !view.length) return;
+  var n = Math.min(view.length, 30), start = Math.floor(Math.random()*n), it = null, k;
+  if(mode == "series"){
+    for(k=0;k<n;k++){ var c = view[(start+k) % n]; if(c.bg){ it = c; break; } }
+    if(it) setHero(it, it.bg, it.plot);
+  } else {
+    var t = ++heroTok; it = view[start];
+    api("get_vod_info", "&vod_id=" + it.sid, function(d){
+      if(t != heroTok || mode != "vod") return;
+      var inf = (d && d.info) ? d.info : {}, b = inf.backdrop_path, u = (b instanceof Array) ? (b[0] || "") : V(b);
+      if(u) setHero(it, u, V(inf.plot));
+    });
+  }
+}
+function setHero(it, bg, plot){
+  var c = cleanTitle(it.name), pl = V(plot);
+  if(pl.length > 230) pl = pl.substring(0, 230) + "...";
+  heroItem = it;
+  heroData = { bg:bg, html:'<div class="heroShade"></div><div class="heroTxt"><h1>' + esc(c.title || it.name) + '</h1>' +
+    (pl ? '<p>' + esc(pl) + '</p>' : '') +
+    '<button class="btnw" onclick="openHero()">&#9654; Ver ahora</button><button class="btng" onclick="openHero()">M&aacute;s informaci&oacute;n</button></div>' };
+  paintHero();
+}
+function paintHero(){
+  var h = $("hero");
+  if(heroData && mode != "live" && scr == "sec"){
+    h.className = "hero"; h.style.backgroundImage = 'url("' + heroData.bg + '")'; h.innerHTML = heroData.html;
+  } else { h.className = "heroSp"; h.style.backgroundImage = "none"; h.innerHTML = ""; }
+}
+function openHero(){ if(heroItem) openDetail(heroItem, mode); }
+
+/* ---------- continuar viendo ---------- */
+function renderCont(){
+  var c = $("cont"); contList = [];
+  if(mode == "live" || !ns){ c.innerHTML = ""; return; }
+  var pre = (mode == "vod" ? "m" : "s") + ns + ":", k, f;
+  for(k in last){
+    if(!last.hasOwnProperty(k) || k.indexOf(pre) !== 0) continue;
+    if(mode == "vod"){ var p = prog[k]; if(!p || p.w || p.t < 30) continue; }
+    var o = {}; for(f in last[k]){ if(last[k].hasOwnProperty(f)) o[f] = last[k][f]; }
+    o.k = k; contList.push(o);
+  }
+  contList.sort(function(a,b){ return (b.u||0) - (a.u||0); });
+  if(contList.length > 20) contList.length = 20;
+  if(!contList.length){ c.innerHTML = ""; return; }
+  var h = ['<div class="secT">Continuar viendo</div><div class="crow">'];
+  for(var j=0;j<contList.length;j++) h.push(contCardHtml(contList[j], j));
+  h.push('</div>');
+  c.innerHTML = h.join("");
+}
+function contCardHtml(l, j){
+  var p, label, pc;
+  if(l.kind == "series"){ p = prog[ekKey(l.epId)]; label = (l.label || "") + (p && p.w ? " \u00b7 vista" : ""); }
+  else { p = prog[l.k]; label = (p && p.d > 0) ? ("Quedan " + Math.max(1, Math.round((p.d - p.t)/60)) + " min") : fmt(p ? p.t : 0); }
+  pc = pct(p);
+  var nm = cleanTitle(l.name).title || l.name;
+  return '<div class="card" onclick="clickCont(' + j + ')" title="' + esc(l.name) + '"><div class="poster">' + posterImg(l.img, nm) +
+         '<div class="ov">&#9654;</div><div class="rm" onclick="removeCont(' + j + ')" title="Quitar de la lista">&#10005;</div>' +
+         (pc > 0 ? '<div class="pgb" style="display:block"><i style="width:' + pc + '%"></i></div>' : '') +
+         '</div><div class="ct">' + esc(nm) + '</div><div class="cs">' + esc(label) + '</div></div>';
+}
+function clickCont(j){
+  var l = contList[j]; if(!l) return;
+  openDetail({ name:l.name, sid:l.sid, img:l.img || "", ext:l.ext || "", plot:"", bg:"" }, mode);
+}
+function removeCont(j){
+  bubble();
+  var l = contList[j]; if(!l) return;
+  delete last[l.k];
+  saveProg(true); renderCont();
+}
+
+/* ---------- progreso ---------- */
+function resumeSecs(key){
+  var p = prog[key];
+  if(!p || p.w || p.t < 30) return 0;
+  return Math.max(0, p.t - 3);
+}
+function touchLast(ctx){
+  if(!ctx || !ctx.key) return;
+  if(!prog[ctx.key]) prog[ctx.key] = { t:0, d:0, w:0, u:0 };
+  if(ctx.lastKey && ctx.lastEntry){
+    var l = {}, k; for(k in ctx.lastEntry){ if(ctx.lastEntry.hasOwnProperty(k)) l[k] = ctx.lastEntry[k]; }
+    l.u = new Date().getTime(); last[ctx.lastKey] = l;
+  }
+  saveProg(true);
+}
+function recordProg(ctx, t, d){
+  if(!ctx || !ctx.key) return;
+  var p = prog[ctx.key];
+  if(!p){ p = { t:0, d:0, w:0, u:0 }; prog[ctx.key] = p; }
+  if(!(d > 0) && ctx.dur > 0 && !p.d) d = ctx.dur;
+  p.t = Math.floor(t); if(d > 0) p.d = Math.floor(d);
+  p.u = new Date().getTime();
+  if(p.d > 0 && p.t >= p.d * 0.9) p.w = 1;
+  if(ctx.lastKey && ctx.lastEntry){
+    var l = {}, k; for(k in ctx.lastEntry){ if(ctx.lastEntry.hasOwnProperty(k)) l[k] = ctx.lastEntry[k]; }
+    l.u = p.u; last[ctx.lastKey] = l;
+  }
+  updBar(ctx.key);
+  saveProg(false);
+}
+function updBar(key){
+  var el = $("pf_" + key), p = prog[key];
+  if(el && p){
+    var c = pct(p);
+    el.style.width = c + "%";
+    if(el.parentNode) el.parentNode.style.display = (c > 0) ? "block" : "none";
+  }
+}
+
+/* VLC: se abre con su interfaz web local para leer el minuto en que vas */
+/* ---------- reproductor integrado (sin VLC) : <video> + hls.js cargado de internet ---------- */
+var hlsGaveUp = false, hlsTick = null, hlsPlays = 0, hlsObj = null, HLS_URL = "https://cdn.jsdelivr.net/npm/hls.js@0.14.17/dist/hls.min.js";
+function havePlayer(){
+  var p = cfg.vlc;
+  if(p && fso.FileExists(p)) return p;
+  var f = findPlayer();
+  if(f){ cfg.vlc = f; saveCfg(); return f; }
+  return "";
+}
+function killHls(){ try{ clearInterval(hlsTick); }catch(e){} if(hlsObj){ try{ hlsObj.destroy(); }catch(e){} hlsObj = null; } }
+function loadScript(u, ok, bad){
+  var s = document.createElement("script"), done = false;
+  function fin(good){ if(done) return; done = true; if(good) ok(); else bad(); }
+  s.type = "text/javascript";
+  s.onload = function(){ fin(true); };
+  s.onreadystatechange = function(){ if(s.readyState == "loaded" || s.readyState == "complete") fin(true); };
+  s.onerror = function(){ fin(false); };
+  s.src = u;
+  document.getElementsByTagName("head")[0].appendChild(s);
+}
+var hlsRetry = 0;
+function vstat(v){
+  var b = "", i, r = null;
+  try{ r = v.buffered; for(i=0;i<r.length;i++) b += "[" + r.start(i).toFixed(1) + "-" + r.end(i).toFixed(1) + "] "; }catch(e){}
+  return (v.paused ? "pausado" : "reproduciendo") + " | t=" + (v.currentTime || 0).toFixed(1) + " | buffer " + (b || "vac\u00edo") +
+         " | readyState " + v.readyState + " | video " + v.videoWidth + "x" + v.videoHeight + (v.error ? " | error " + v.error.code : "");
+}
+function plog(t){ st(t); var e = $("plog"); if(e) e.innerHTML = esc(t); }
+function startHls(v, url){
+  plog("Cargando el reproductor integrado (hls.js)...");
+  hlsRetry = 0;
+  var go = function(){
+    if($("modal").style.display != "block") return;
+    if(!window.Hls){ plog("No se pudo cargar hls.js."); return; }
+    if(!Hls.isSupported()){ plog("Esta PC no puede reproducir HLS dentro del programa (falta soporte MSE). Usa Ajustes > Instalar VLC aqu\u00ed."); return; }
+    killHls();
+    var h = new Hls({ enableWorker:false, manifestLoadingTimeOut:15000, levelLoadingTimeOut:15000, fragLoadingTimeOut:20000 }), frags = 0;
+    var hint = "Puede ser un canal ca\u00eddo, el l\u00edmite de conexiones de tu cuenta o un formato no compatible (H.265).";
+    hlsObj = h; hlsPlays = 0; hlsGaveUp = false;
+    var secs = 0;
+    hlsTick = setInterval(function(){
+      var e = $("pstat"); if(e) e.innerText = vstat(v);
+      secs++;
+      if(secs == 10 && frags > 0 && v.readyState == 0 && !hlsGaveUp){
+        hlsGaveUp = true;
+        plog("El reproductor integrado no puede mostrar video en esta PC (el motor de Windows que usa el programa no lo permite). Cierra esta ventana y en Ajustes pulsa \u00abInstalar VLC aqu\u00ed\u00bb.");
+      }
+    }, 1000);
+    v.oncanplay = function(){ try{ if(v.paused) v.play(); }catch(x){} };
+    h.on(Hls.Events.FRAG_BUFFERED, function(){ if(v.paused && hlsPlays < 3){ hlsPlays++; try{ v.play(); }catch(x){} } });
+    var wd = setTimeout(function(){
+      if(hlsObj === h && frags == 0) plog("Sin video despu\u00e9s de 15 s. " + hint);
+    }, 15000);
+    h.on(Hls.Events.MANIFEST_LOADING, function(){ plog("Pidiendo la lista del canal..."); });
+    h.on(Hls.Events.MANIFEST_PARSED, function(e, d){
+      plog("Lista recibida (" + ((d && d.levels) ? d.levels.length : "?") + " calidades). Descargando video...");
+      try{ v.play(); }catch(x){}
+    });
+    h.on(Hls.Events.FRAG_LOADED, function(){ frags++; if(frags == 1){ clearTimeout(wd); plog("Video recibido: reproduciendo..."); } });
+    h.on(Hls.Events.ERROR, function(ev, data){
+      var det = data ? (data.details || data.type) : "?";
+      var code = (data && data.response && data.response.code) ? " HTTP " + data.response.code : "";
+      if(data && data.fatal){
+        if(data.type == Hls.ErrorTypes.NETWORK_ERROR && hlsRetry < 2){ hlsRetry++; plog("Error de red (" + det + code + "), reintentando..."); h.startLoad(); }
+        else if(data.type == Hls.ErrorTypes.MEDIA_ERROR && hlsRetry < 2){ hlsRetry++; plog("Error de video (" + det + "), recuperando..."); h.recoverMediaError(); }
+        else { clearTimeout(wd); plog("No se pudo reproducir: " + det + code + ". " + hint); }
+      } else { plog("Aviso: " + det + code); }
+    });
+    h.loadSource(url); h.attachMedia(v);
+  };
+  if(window.Hls) go(); else loadScript(HLS_URL, go, function(){ plog("No pude descargar el reproductor (revisa tu internet)."); });
+}
+function playBuiltIn(url, name, ctx){
+  if(/\/live\//.test(url)) url = url.replace(/\.ts(\?.*)?$/i, ".m3u8");
+  if(!D){
+    $("modal").style.display = "block"; $("vbox").style.display = "none";
+    $("mBody").innerHTML = '<div class="msg" style="padding-top:50px;font-size:18px;color:#fff">' + esc(name) + '</div><div id="plog" class="msg" style="padding-top:0"></div><div id="pstat" class="msg" style="padding-top:0;font-size:12px"></div>';
+  }
+  playHere(url, name, ctx);
+}
+
+function playExternal(url, name, ctx){
+  var p = havePlayer(); if(!p){ playBuiltIn(url, name, ctx); return; }
+  var isVlc = /vlc/i.test(p), isMpv = /mpv/i.test(p), args = [], port = 0, pw = "";
+  var rs = (ctx && !ctx.noResume) ? resumeSecs(ctx.key) : 0;
+  if(isVlc){
+    if(ctx){
+      port = 18000 + Math.floor(Math.random()*2000); pw = "x" + Math.floor(Math.random()*1000000);
+      args.push("--no-one-instance", "--extraintf=http", "--http-host=127.0.0.1", "--http-port=" + port, "--http-password=" + pw);
+    }
+    if(rs > 0) args.push("--start-time=" + rs);
+  } else if(isMpv && rs > 0){ args.push("--start=" + rs); }
+  try{
+    sh.Run('"' + p + '" ' + args.join(" ") + (args.length ? " " : "") + '"' + url + '"', 1, false);
+  }catch(e){ st("Error al abrir el reproductor: " + e.message); return; }
+  st("Abierto: " + name + (rs > 0 ? "  (desde " + fmt(rs) + ")" : ""));
+  if(ctx){
+    touchLast(ctx);
+    if(isVlc) beginSession(ctx, port, pw);
+    else st("Abierto: " + name + ". Este reproductor no permite guardar el progreso solo; usa \"Marcar como vista\".");
+  }
+}
+function beginSession(ctx, port, pw){
+  endSession(true);
+  sess = { ctx:ctx, port:port, pw:pw, started:new Date().getTime(), seen:false, fails:0, busy:false, lastT:0, lastD:0 };
+  sess.timer = setInterval(pollVlc, 4000);
+}
+function pollVlc(){
+  var s = sess; if(!s || s.busy) return;
+  s.busy = true;
+  var x = new XMLHttpRequest();
+  x.open("GET", "http://127.0.0.1:" + s.port + "/requests/status.json?_=" + new Date().getTime(), true);
+  try{ x.timeout = 3000; }catch(e){}
+  try{ x.setRequestHeader("Authorization", "Basic " + btoa(":" + s.pw)); }catch(e){}
+  x.onreadystatechange = function(){
+    if(x.readyState != 4) return;
+    s.busy = false;
+    if(sess !== s) return;
+    if(x.status == 200){
+      var o; try{ o = JSON.parse(x.responseText); }catch(e){ return; }
+      s.seen = true; s.fails = 0;
+      var t = parseFloat(o.time) || 0, d = parseFloat(o.length) || 0;
+      if(t > 0){ s.lastT = t; if(d > 0) s.lastD = d; recordProg(s.ctx, t, d || s.lastD); }
+    } else {
+      s.fails++;
+      if((s.seen && s.fails >= 2) || (!s.seen && new Date().getTime() - s.started > 60000)){
+        if(!s.seen) st("No pude conectar con VLC para guardar el progreso. Usa \"Marcar como vista\".");
+        endSession(false);
+      }
+    }
+  };
+  try{ x.send(); }catch(e){ s.busy = false; s.fails++; }
+}
+function endSession(silent){
+  if(!sess) return;
+  var s = sess; sess = null;
+  try{ clearInterval(s.timer); }catch(e){}
+  if(s.lastD > 0 && s.lastT >= s.lastD * 0.9) recordProg(s.ctx, s.lastD, s.lastD);
+  saveProg(true);
+  if(!silent){ renderCont(); if(D) renderDetail(); st("Progreso guardado."); }
+}
+
+/* reproductor integrado */
+function playHere(url, name, ctx){
+  var v = $("v");
+  hereCtx = ctx || null; hereT = 0;
+  $("vbox").style.display = "block";
+  v.onerror = function(){ st("Formato no compatible con el reproductor integrado. Usa VLC."); };
+  v.onloadedmetadata = function(){
+    var r = (hereCtx && !hereCtx.noResume) ? resumeSecs(hereCtx.key) : 0;
+    if(r > 0){ try{ v.currentTime = r; }catch(e){} }
+  };
+  v.ontimeupdate = function(){
+    if(!hereCtx || !(v.currentTime > 0)) return;
+    var n = new Date().getTime();
+    if(n - hereT > 5000){ hereT = n; recordProg(hereCtx, v.currentTime, v.duration); }
+  };
+  v.onpause = function(){ if(hereCtx && v.currentTime > 0){ recordProg(hereCtx, v.currentTime, v.duration); saveProg(true); } };
+  v.onended = function(){ if(hereCtx && v.duration > 0){ recordProg(hereCtx, v.duration, v.duration); saveProg(true); } };
+  if(hereCtx) touchLast(hereCtx);
+  killHls();
+  if(/\.m3u8(\?|$)/i.test(url)){ startHls(v, url); }
+  else { v.src = url; try{ v.load(); v.play(); }catch(e){} }
+  $("mbox").scrollTop = 0;
+  if(!/\.m3u8(\?|$)/i.test(url)) st("Reproduciendo: " + name);
+}
+function stopHere(){
+  var v = $("v");
+  try{
+    if(hereCtx && v.currentTime > 0){ recordProg(hereCtx, v.currentTime, v.duration); saveProg(true); }
+    v.onpause = null; v.ontimeupdate = null; v.onended = null; v.pause();
+    killHls();
+  }catch(e){}
+  hereCtx = null;
+}
+function copyText(t){
+  try{ window.clipboardData.setData("Text", t); st("Enlace copiado."); }catch(e){ st("No se pudo copiar."); }
+}
+
+/* ---------- limpieza de nombre + IMDb ---------- */
+function cleanTitle(n){
+  var s = String(n||""), year = null, m;
+  m = s.match(/[\(\[]\s*((?:19|20)\d{2})\s*[\)\]]/);
+  if(m) year = parseInt(m[1],10);
+  s = s.replace(/^\s*[A-Z]{2,4}\s*\|\s*/, "").replace(/^\s*[A-Z]{2,4}\s+-\s+/, "");
+  s = s.replace(/\[[^\]]*\]/g, " ").replace(/\([^\)]*\)/g, " ");
+  s = s.replace(/\b(4K|UHD|FHD|FULLHD|HD|SD|1080P|720P|2160P|HEVC|H265|X265|LATINO|CASTELLANO|ESPA.OL|DUAL|MULTI|SUBTITULADO|SUBS?|VOSE|VOS)\b/gi, " ");
+  s = s.replace(/[\|_]+/g, " ");
+  m = s.match(/^(.*\S)[\s\-:]+((?:19|20)\d{2})\s*$/);
+  if(m){ if(!year) year = parseInt(m[2],10); s = m[1]; }
+  s = s.replace(/\s{2,}/g, " ").replace(/^[\s\-:]+|[\s\-:]+$/g, "");
+  return { title:s, year:year };
+}
+function norm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9]/g, ""); }
+function pickImdb(list, c, md){
+  var best = null, bs = -99, nt = norm(c.title);
+  for(var i=0;i<list.length;i++){
+    var r = list[i];
+    if(!r.id || r.id.indexOf("tt") !== 0) continue;
+    var q = String(r.q||"").toLowerCase();
+    if(q.indexOf("video game") > -1) continue;
+    var isS = (q.indexOf("tv series") > -1 || q.indexOf("tv mini") > -1);
+    var sc = Math.max(0, 3 - i), nl = norm(r.l);
+    if(nl == nt) sc += 10; else if(nl && nt && (nl.indexOf(nt) > -1 || nt.indexOf(nl) > -1)) sc += 4;
+    if(c.year && r.y){ var dy = Math.abs(c.year - r.y); if(dy == 0) sc += 6; else if(dy == 1) sc += 3; else sc -= 2; }
+    if((md == "series") == isS) sc += 5;
+    if(sc > bs){ bs = sc; best = r; }
+  }
+  return bs >= 5 ? best : null;
+}
+function decodeEnt(s){
+  return String(s||"").replace(/&quot;/g,'"').replace(/&#39;|&#x27;|&apos;/g,"'").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">");
+}
+function fetchImdbDetails(rec, done){
+  if(cfg.omdb){
+    http("https://www.omdbapi.com/?i=" + rec.id + "&plot=full&apikey=" + encodeURIComponent(cfg.omdb), function(t){
+      try{
+        var o = JSON.parse(t);
+        if(o.Response == "True"){
+          rec.plot = V(o.Plot); rec.rating = V(o.imdbRating); rec.votes = V(o.imdbVotes);
+          rec.genre = V(o.Genre); rec.runtime = V(o.Runtime); rec.director = V(o.Director);
+          rec.actors = V(o.Actors); rec.rated = V(o.Rated); rec.awards = V(o.Awards);
+          rec.rt = ""; rec.rtc = 1;
+          if(o.Ratings && o.Ratings.length){
+            for(var ri=0; ri<o.Ratings.length; ri++){ if(o.Ratings[ri].Source == "Rotten Tomatoes"){ rec.rt = V(o.Ratings[ri].Value); break; } }
+          }
+          if(!rec.img) rec.img = V(o.Poster);
+        } else { rec.omdbErr = V(o.Error) || "Respuesta no v\u00e1lida de OMDb"; }
+      }catch(e){}
+      done();
+    }, function(){ rec.omdbErr = "No se pudo conectar con OMDb"; done(); });
+  } else {
+    http("https://www.imdb.com/title/" + rec.id + "/", function(t){
+      try{
+        var m = t.match(/"description":"((?:[^"\\]|\\.)*)"/);
+        if(m) rec.plot = decodeEnt(JSON.parse('"' + m[1] + '"'));
+        var r = t.match(/"ratingValue":\s*([0-9.]+)/);
+        if(r) rec.rating = r[1];
+      }catch(e){}
+      done();
+    }, function(){ done(); });
+  }
+}
+function lookupImdb(t, custom){
+  var c = D.clean, title = custom || c.title;
+  var key = D.mode + "|" + title.toLowerCase() + "|" + (custom ? "" : (c.year || ""));
+  var hit = imdbCache[key];
+  if(hit && hit.id && (hit.plot || !cfg.omdb)){
+    D.imdb = hit; D.imdbState = "done"; renderDetail();
+    if(cfg.omdb && !hit.rtc){
+      delete hit.omdbErr;
+      fetchImdbDetails(hit, function(){ saveCache(); if(D && D.tok == t){ D.imdb = hit; renderDetail(); } });
+    }
+    return;
+  }
+  var q = title.toLowerCase();
+  if(!q){ D.imdbState = "none"; renderDetail(); return; }
+  var ch = q.charAt(0); if(!/[a-z0-9]/.test(ch)) ch = "x";
+  http("https://v2.sg.media-imdb.com/suggestion/" + ch + "/" + encodeURIComponent(q) + ".json", function(txt){
+    if(!D || D.tok != t) return;
+    var r = null; try{ r = JSON.parse(txt); }catch(e){}
+    var cc = custom ? { title:title, year:null } : c;
+    var m = (r && r.d) ? pickImdb(r.d, cc, D.mode) : null;
+    if(!m){ D.imdbState = "none"; renderDetail(); return; }
+    var rec = { id:m.id, title:m.l, year:m.y, img:(m.i && m.i.imageUrl) || "", cast:m.s || "", type:m.q || "" };
+    fetchImdbDetails(rec, function(){
+      imdbCache[key] = rec; saveCache();
+      if(D && D.tok == t){ D.imdb = rec; D.imdbState = "done"; renderDetail(); }
+    });
+  }, function(){ if(D && D.tok == t){ D.imdbState = "error"; renderDetail(); } });
+}
+function reSearch(){
+  var v = $("reQ").value.replace(/^\s+|\s+$/g, "");
+  if(!v || !D) return;
+  D.imdb = null; D.imdbState = "loading"; D.plotEs = null; D.showEs = false;
+  renderDetail();
+  lookupImdb(D.tok, v);
+}
+function trPlot(){
+  if(!D || !D.imdb || !D.imdb.plot) return;
+  if(D.plotEs){ D.showEs = !D.showEs; renderDetail(); return; }
+  st("Traduciendo...");
+  var t = D.tok;
+  http("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q=" + encodeURIComponent(D.imdb.plot), function(txt){
+    if(!D || D.tok != t) return;
+    try{
+      var r = JSON.parse(txt), out = "";
+      for(var i=0;i<r[0].length;i++) out += r[0][i][0];
+      D.plotEs = out; D.showEs = true; st("Traducido."); renderDetail();
+    }catch(e){ st("No se pudo traducir."); }
+  }, function(){ st("No se pudo traducir (sin conexi\u00f3n al traductor)."); });
+}
+
+/* ---------- ficha ---------- */
+function openDetail(it, m){
+  var dm = m || mode, t = ++tok;
+  D = { tok:t, mode:dm, it:it, info:{}, md:{}, eps:null, seasons:[], season:null, flat:[], bg:it.bg || "",
+        imdb:null, imdbState:"loading", plotEs:null, showEs:false, clean:cleanTitle(it.name) };
+  $("modal").style.display = "block";
+  $("vbox").style.display = "none";
+  stopHere();
+  $("mbox").scrollTop = 0;
+  renderDetail();
+  if(dm == "vod"){
+    api("get_vod_info", "&vod_id=" + it.sid, function(d){
+      if(!D || D.tok != t) return;
+      D.info = (d && d.info) ? d.info : {}; D.md = (d && d.movie_data) ? d.movie_data : {};
+      setBackdrop(); renderDetail();
+    });
+  } else {
+    api("get_series_info", "&series_id=" + it.sid, function(d){
+      if(!D || D.tok != t) return;
+      D.info = (d && d.info) ? d.info : {};
+      D.eps = (d && d.episodes && !(d.episodes instanceof Array)) ? d.episodes : {};
+      var s = [], k, i; for(k in D.eps){ if(D.eps.hasOwnProperty(k)) s.push(k); }
+      s.sort(function(a,b){ return parseInt(a,10) - parseInt(b,10); });
+      D.seasons = s; D.flat = [];
+      for(i=0;i<s.length;i++){
+        var list = (D.eps[s[i]] || []).slice();
+        list.sort(function(a,b){ return (parseInt(a.episode_num,10)||0) - (parseInt(b.episode_num,10)||0); });
+        for(var j=0;j<list.length;j++){
+          var e = list[j];
+          D.flat.push({ season:s[i], num:e.episode_num, id:e.id, title:V(e.title), e:e, key:ekKey(e.id),
+                        url:base + "/series/" + user + "/" + pass + "/" + e.id + "." + (V(e.container_extension) || "mp4") });
+        }
+      }
+      var tg = seriesTarget();
+      D.season = tg ? D.flat[tg.idx].season : (s.length ? s[0] : null);
+      setBackdrop(); renderDetail();
+    });
+  }
+  lookupImdb(t, null);
+}
+function setBackdrop(){
+  var b = D.info.backdrop_path, u = "";
+  if(b instanceof Array) u = b.length ? b[0] : ""; else u = V(b);
+  if(u) D.bg = u;
+}
+function closeDetail(){
+  $("modal").style.display = "none";
+  stopHere();
+  D = null; tok++;
+  renderCont();
+}
+function pickSeason(s){ if(D){ D.season = s; renderDetail(); } }
+
+function posterOf(){ return D.it.img || V(D.info.movie_image) || V(D.info.cover) || (D.imdb && D.imdb.img) || ""; }
+function movieCtx(fromStart){
+  var it = D.it;
+  return { key:mkKey(it.sid), lastKey:mkKey(it.sid), noResume:!!fromStart,
+           lastEntry:{ kind:"vod", sid:it.sid, name:it.name, img:posterOf(), ext:(V(D.md.container_extension) || it.ext || "mp4") } };
+}
+function vodUrl(){
+  var ext = V(D.md.container_extension) || D.it.ext || "mp4";
+  return base + "/movie/" + user + "/" + pass + "/" + D.it.sid + "." + ext;
+}
+function playVod(here, fromStart){
+  var ctx = movieCtx(fromStart);
+  if(here) playHere(vodUrl(), D.it.name, ctx); else playExternal(vodUrl(), D.it.name, ctx);
+}
+function copyVod(){ copyText(vodUrl()); }
+function toggleMovie(){
+  var k = mkKey(D.it.sid), p = prog[k] || (prog[k] = { t:0, d:0, w:0, u:0 });
+  if(p.w){ p.w = 0; p.t = 0; } else { p.w = 1; if(p.d > 0) p.t = p.d; }
+  p.u = new Date().getTime();
+  touchLast(movieCtx(false)); saveProg(true); renderDetail();
+}
+function epCtx(e, fromStart){
+  return { key:e.key, dur:(parseInt((e.e.info || {}).duration_secs, 10) || 0), lastKey:skKey(D.it.sid), noResume:!!fromStart,
+           lastEntry:{ kind:"series", sid:D.it.sid, name:D.it.name, img:posterOf(), epId:e.id, label:"T" + e.season + " E" + e.num } };
+}
+function playFlat(fi, here, fromStart){
+  var e = D.flat[fi]; if(!e) return;
+  bubble();
+  var nm = D.clean.title + " - T" + e.season + " E" + e.num + (e.title ? " - " + e.title : "");
+  if(here) playHere(e.url, nm, epCtx(e, fromStart)); else playExternal(e.url, nm, epCtx(e, fromStart));
+}
+function toggleEp(fi){
+  var e = D.flat[fi]; if(!e) return;
+  bubble();
+  var p = prog[e.key] || (prog[e.key] = { t:0, d:0, w:0, u:0 });
+  if(p.w){ p.w = 0; p.t = 0; } else { p.w = 1; if(p.d > 0) p.t = p.d; }
+  p.u = new Date().getTime();
+  touchLast(epCtx(e, false)); saveProg(true); renderDetail();
+}
+function seriesTarget(){
+  var fl = D.flat || []; if(!fl.length) return null;
+  var l = last[skKey(D.it.sid)];
+  if(!l) return { idx:0, kind:"start" };
+  var idx = -1;
+  for(var i=0;i<fl.length;i++){ if(String(fl[i].id) == String(l.epId)){ idx = i; break; } }
+  if(idx < 0) return { idx:0, kind:"start" };
+  var p = prog[fl[idx].key];
+  if(p && p.w){ return (idx + 1 < fl.length) ? { idx:idx+1, kind:"next" } : { idx:idx, kind:"again" }; }
+  return { idx:idx, kind:"resume" };
+}
+function openImdb(){ if(D && D.imdb) openUrl("https://www.imdb.com/title/" + D.imdb.id + "/"); }
+function openTrailer(){
+  var y = V(D.info.youtube_trailer); if(!y) return;
+  openUrl(/^https?:/i.test(y) ? y : "https://www.youtube.com/watch?v=" + y);
+}
+
+function renderDetail(){
+  if(!D) return;
+  var it = D.it, info = D.info || {}, im = D.imdb, c = D.clean, h = [], isS = (D.mode == "series");
+  var poster = posterOf();
+  var year = c.year || (im && im.year) || V(info.releasedate || info.releaseDate || info.release_date).substring(0,4);
+  var runtime = (im && im.runtime) || V(info.duration) || (V(info.episode_run_time) ? info.episode_run_time + " min" : "");
+  var genre = (im && im.genre) || V(info.genre);
+  var provPlot = V(info.plot || info.description) || it.plot || "";
+  var imPlot = (im && im.plot) ? ((D.showEs && D.plotEs) ? D.plotEs : im.plot) : "";
+  var bg = D.bg || "";
+
+  /* banner */
+  h.push('<div class="dh' + (bg ? '' : ' nobg') + '"' + (bg ? ' style="background-image:url(\'' + esc(bg.replace(/'/g, "%27")) + '\')"' : '') + '><div class="dsh"></div><div class="dht">');
+  h.push('<h1>' + esc(c.title || it.name) + '</h1>');
+  var chips = [];
+  if(im && im.rating) chips.push('<span><span class="imdb">IMDb</span><b>' + esc(im.rating) + '</b>/10</span>');
+  else if(parseFloat(info.rating) > 0) chips.push('<span>&#9733; <b>' + esc(info.rating) + '</b></span>');
+  if(im && im.rt) chips.push('<span><span class="rtl' + (parseInt(im.rt,10) < 60 ? ' rot' : '') + '">RT</span><b>' + esc(im.rt) + '</b></span>');
+  if(year) chips.push('<span>' + esc(year) + '</span>');
+  if(im && im.rated) chips.push('<span class="rated">' + esc(im.rated) + '</span>');
+  if(runtime) chips.push('<span>' + esc(runtime) + '</span>');
+  if(genre) chips.push('<span>' + esc(genre) + '</span>');
+  if(chips.length) h.push('<div class="chips">' + chips.join('') + '</div>');
+
+  if(!isS){
+    var mk = mkKey(it.sid), p = prog[mk], rs = resumeSecs(mk), pc = pct(p);
+    if(rs > 0){
+      h.push('<button class="btnw" onclick="playVod(0,0)">&#9654; Continuar (' + fmt(rs) + ')</button>');
+      h.push('<button class="btng" onclick="playVod(0,1)">Desde el inicio</button>');
+    } else {
+      h.push('<button class="btnw" onclick="playVod(0,1)">&#9654; Reproducir</button>');
+    }
+    h.push('<div class="mpg"><div class="pgb" style="display:' + (pc > 0 ? 'block' : 'none') + '"><i id="pf_' + mk + '" style="width:' + pc + '%"></i></div></div>');
+    if(p && p.d > 0 && !p.w) h.push('<span class="mpt">' + fmt(p.t) + ' / ' + fmt(p.d) + '</span>');
+    else if(p && p.w) h.push('<span class="chk">&#10003; Vista</span>');
+  } else {
+    var tg = seriesTarget();
+    if(tg){
+      var te = D.flat[tg.idx], lab = "T" + te.season + " E" + te.num;
+      var txt = (tg.kind == "resume") ? "Continuar " + lab + (resumeSecs(te.key) > 0 ? " (" + fmt(resumeSecs(te.key)) + ")" : "") : (tg.kind == "next") ? "Siguiente: " + lab : (tg.kind == "again") ? "Ver de nuevo " + lab : "Reproducir " + lab;
+      h.push('<button class="btnw" onclick="playFlat(' + tg.idx + ',0,0)">&#9654; ' + esc(txt) + '</button>');
+    }
+  }
+  h.push('</div></div>');
+
+  /* cuerpo */
+  h.push('<div class="dbody"><div class="dl"><div>');
+  if(!isS){
+    h.push('<button class="btng sm" onclick="playVod(1,0)">&#9654; Aqu&iacute;</button>');
+    h.push('<button class="btng sm" onclick="copyVod()">Copiar enlace</button>');
+    h.push('<button class="btng sm" onclick="toggleMovie()">' + (prog[mkKey(it.sid)] && prog[mkKey(it.sid)].w ? 'Quitar de vistas' : 'Marcar como vista') + '</button>');
+  }
+  if(im) h.push('<button class="btng sm" onclick="openImdb()">Abrir en IMDb</button>');
+  if(V(info.youtube_trailer)) h.push('<button class="btng sm" onclick="openTrailer()">Tr&aacute;iler</button>');
+  if(im && im.plot) h.push('<button class="btng sm" onclick="trPlot()">' + (D.showEs ? 'Ver original' : 'Traducir al espa&ntilde;ol') + '</button>');
+  h.push('</div>');
+
+  if(imPlot){
+    h.push('<div class="plot"><span class="lbl">Sinopsis (IMDb' + (D.showEs ? ', traducida' : '') + ')</span><br>' + esc(imPlot) + '</div>');
+    if(provPlot && provPlot != imPlot) h.push('<div class="plot"><span class="lbl">Sinopsis (proveedor)</span><br>' + esc(provPlot) + '</div>');
+  } else if(provPlot){
+    h.push('<div class="plot">' + esc(provPlot) + '</div>');
+  } else {
+    h.push('<div class="plot lbl">Sin sinopsis disponible.</div>');
+  }
+  h.push('</div><div class="dr">');
+  var dir = (im && im.director) || V(info.director), cast = (im && im.actors) || V(info.cast) || (im && im.cast) || "";
+  if(cast) h.push('<div class="small"><span class="lbl">Reparto:</span> ' + esc(cast) + '</div>');
+  if(dir) h.push('<div class="small"><span class="lbl">Director:</span> ' + esc(dir) + '</div>');
+  if(im && im.votes) h.push('<div class="small"><span class="lbl">Votos IMDb:</span> ' + esc(im.votes) + '</div>');
+  if(im && im.awards) h.push('<div class="small"><span class="lbl">Premios:</span> ' + esc(im.awards) + '</div>');
+
+  if(D.imdbState == "loading") h.push('<div class="small">Buscando en IMDb...</div>');
+  else if(D.imdbState == "error") h.push('<div class="small">No se pudo consultar IMDb (revisa tu conexi&oacute;n).</div>');
+  else if(D.imdbState == "none") h.push('<div class="small">No encontr&eacute; este t&iacute;tulo en IMDb.</div>');
+  if(im){
+    h.push('<div class="small"><span class="lbl">Coincidencia en IMDb:</span> <b>' + esc(im.title) + '</b>' + (im.year ? ' (' + esc(im.year) + ')' : '') + '</div>');
+    if(im.omdbErr) h.push('<div class="small">OMDb: ' + esc(im.omdbErr) + '</div>');
+    else if(!im.plot && !cfg.omdb) h.push('<div class="small">Para traer la sinopsis de IMDb y la puntuaci\u00f3n de Rotten Tomatoes hace falta la clave gratuita de OMDb (en Ajustes).</div>');
+  }
+  if(D.imdbState != "loading"){
+    h.push('<div class="small">&iquest;No es la correcta? Buscar en IMDb:<br><input class="inp" id="reQ" type="text" style="width:62%" value="' + esc(c.title) + '"> <button class="btng sm" style="margin:0" onclick="reSearch()">Buscar</button></div>');
+  }
+  h.push('</div></div>');
+
+  /* episodios */
+  if(isS){
+    if(D.eps === null) h.push('<div class="msg">Cargando episodios...</div>');
+    else if(!D.flat.length) h.push('<div class="msg">Esta serie no tiene episodios disponibles.</div>');
+    else {
+      h.push('<div class="eph"><span class="ept">Episodios</span><select class="sel" onchange="pickSeason(this.value)">');
+      for(var s=0;s<D.seasons.length;s++){
+        h.push('<option value="' + esc(D.seasons[s]) + '"' + (D.seasons[s] == D.season ? ' selected' : '') + '>Temporada ' + esc(D.seasons[s]) + '</option>');
+      }
+      h.push('</select></div><div class="eps">');
+      for(var fi=0;fi<D.flat.length;fi++){
+        var e = D.flat[fi]; if(e.season != D.season) continue;
+        var ei = e.e.info || {}, ep = prog[e.key], epc = pct(ep);
+        var dsc = V(ei.plot); if(dsc.length > 190) dsc = dsc.substring(0,190) + "...";
+        var du = V(ei.duration);
+        h.push('<div class="ep" onclick="playFlat(' + fi + ',0,0)">');
+        h.push('<div class="enum">' + esc(e.num) + '</div>');
+        h.push('<div class="eth"><img src="' + esc(V(ei.movie_image) || poster) + '" onerror="this.style.visibility=\'hidden\'"><div class="eov">&#9654;</div>');
+        h.push('<div class="pgb" style="display:' + (epc > 0 ? 'block' : 'none') + '"><i id="pf_' + e.key + '" style="width:' + epc + '%"></i></div></div>');
+        h.push('<div class="et"><div class="etl"><span>' + esc(e.title || ("Episodio " + e.num)) + '</span>' + (du ? '<span class="edu">' + esc(du) + '</span>' : '') + '</div>');
+        h.push('<div class="ed">' + ((ep && !ep.w && ep.t >= 30) ? '<b style="color:#e3bd75">Quedaste en ' + fmt(ep.t) + (ep.d > 0 ? ' de ' + fmt(ep.d) : '') + '</b> &middot; ' : '') + esc(dsc) + '</div></div>');
+        h.push('<div class="eb">' + ((ep && ep.w) ? '<span class="chk">&#10003; Vista</span>' : '') +
+               '<button class="mini" onclick="toggleEp(' + fi + ')">' + ((ep && ep.w) ? 'Quitar vista' : 'Marcar vista') + '</button>' +
+               '<button class="mini" onclick="playFlat(' + fi + ',1,0)">Aqu&iacute;</button></div>');
+        h.push('</div>');
+      }
+      h.push('</div>');
+    }
+  }
+  $("mBody").innerHTML = h.join("");
+}
+
+/* ---------- VLC portable: se descarga y descomprime junto al programa (todo nativo) ---------- */
+var vlcBusy = false;
+function portableVlc(){
+  try{
+    var root = appFolder(), e, e2, s, p;
+    if(!fso.FolderExists(root)) return "";
+    for(e = new Enumerator(fso.GetFolder(root).SubFolders); !e.atEnd(); e.moveNext()){
+      s = e.item();
+      if(!/^vlc/i.test(s.Name)) continue;
+      p = s.Path + "\\vlc.exe"; if(fso.FileExists(p)) return p;
+      for(e2 = new Enumerator(s.SubFolders); !e2.atEnd(); e2.moveNext()){
+        p = e2.item().Path + "\\vlc.exe"; if(fso.FileExists(p)) return p;
+      }
+    }
+  }catch(x){}
+  return "";
+}
+function vlcMsg(t){ $("cfgWarn").innerHTML = t; $("cfgWarn").style.display = "block"; st(t.replace(/<[^>]*>/g, " ")); }
+function vlcFail(msg){
+  vlcBusy = false;
+  vlcMsg(msg + "<br>Plan B: descarga el .zip de VLC desde videolan.org, extr\u00e1elo dentro de una carpeta llamada <b>vlc</b> junto a este programa y vuelve a abrirlo.");
+}
+function installVlc(){
+  if(vlcBusy) return;
+  var have = portableVlc();
+  if(have){ cfg.vlc = have; saveCfg(); $("c_vlc").value = have; vlcMsg("Ya hay un VLC junto al programa: " + have); return; }
+  vlcBusy = true;
+  var arch = sh.ExpandEnvironmentStrings("%PROCESSOR_ARCHITEW6432%");
+  if(arch.charAt(0) == "%") arch = sh.ExpandEnvironmentStrings("%PROCESSOR_ARCHITECTURE%");
+  var dir = /64/.test(arch) ? "win64" : "win32";
+  vlcMsg("Buscando la \u00faltima versi\u00f3n de VLC...");
+  http("https://get.videolan.org/vlc/", function(t){
+    var vs = [], seen = {}, m, re = /href="(?:[^"]*\/)?(3\.\d+\.\d+)\/?"/g;
+    while((m = re.exec(t)) !== null){ if(!seen[m[1]]){ seen[m[1]] = 1; vs.push(m[1]); } }
+    vs.sort(function(a,b){ var x = a.split("."), y = b.split("."), i, d; for(i=0;i<3;i++){ d = parseInt(x[i],10) - parseInt(y[i],10); if(d) return d; } return 0; });
+    vs.reverse();
+    if(!vs.length) vs.push("3.0.21");
+    tryVlcVer(vs, 0, dir);
+  }, function(){ tryVlcVer(["3.0.21"], 0, dir); });
+}
+function tryVlcVer(vs, i, dir){
+  if(i >= vs.length || i >= 4){ vlcFail("No encontr\u00e9 el .zip de VLC en el servidor."); return; }
+  var v = vs[i], url = "https://get.videolan.org/vlc/" + v + "/" + dir + "/";
+  http(url, function(t){
+    var m = t.match(new RegExp('href="(?:[^"]*/)?(vlc-' + v.replace(/\./g, "\\.") + '-' + dir + '\\.zip)"'));
+    if(m) downloadVlc(url + m[1], v, m[1]); else tryVlcVer(vs, i + 1, dir);
+  }, function(){ tryVlcVer(vs, i + 1, dir); });
+}
+function downloadVlc(url, v, fname){
+  var root = appFolder(), zip = root + "\\" + fname, x;
+  vlcMsg("Descargando VLC " + v + " (unos 40 MB). No cierres el programa...");
+  try{ x = new ActiveXObject("MSXML2.XMLHTTP.6.0"); x.open("GET", url, true); }
+  catch(e){ vlcFail("No pude iniciar la descarga: " + e.message); return; }
+  x.onreadystatechange = function(){
+    if(x.readyState != 4) return;
+    var s = 0; try{ s = x.status; }catch(e){}
+    if(s != 200){ vlcFail("La descarga fall\u00f3 (HTTP " + s + ")."); return; }
+    try{
+      var b = new ActiveXObject("ADODB.Stream"); b.Type = 1; b.Open(); b.Write(x.responseBody); b.SaveToFile(zip, 2); b.Close();
+    }catch(e){ vlcFail("No pude guardar el archivo: " + e.message); return; }
+    unzipVlc(zip, root + "\\vlc");
+  };
+  try{ x.send(); }catch(e){ vlcFail("No pude descargar: " + e.message); }
+}
+function unzipVlc(zip, dest){
+  vlcMsg("Descomprimiendo VLC...");
+  try{
+    if(!fso.FolderExists(dest)) fso.CreateFolder(dest);
+    var sa = new ActiveXObject("Shell.Application");
+    sa.NameSpace(dest).CopyHere(sa.NameSpace(zip).Items(), 4 + 16 + 1024);
+  }catch(e){ vlcFail("No pude descomprimir: " + e.message); return; }
+  var last = -1, same = 0, ticks = 0;
+  var tmr = setInterval(function(){
+    var size = 0, ok = portableVlc();
+    ticks++;
+    try{ size = fso.GetFolder(dest).Size; }catch(e){}
+    if(ok && size > 0 && size == last) same++; else same = 0;
+    last = size;
+    if(same >= 2){
+      clearInterval(tmr); vlcBusy = false;
+      try{ fso.DeleteFile(zip); }catch(e){}
+      cfg.vlc = ok; saveCfg(); $("c_vlc").value = ok;
+      vlcMsg("VLC instalado junto al programa. Cierra Ajustes y ya puedes reproducir.");
+    } else if(ticks > 240){ clearInterval(tmr); vlcFail("La descompresi\u00f3n tard\u00f3 demasiado."); }
+  }, 2500);
+}
+
+/* =====================================================================
+   EXPORTAR a .m3u8  y  DEPURAR enlaces (todo nativo: XMLHttpRequest + ADODB.Stream)
+   ===================================================================== */
+var dead = {}, toolBusy = false, DP = null, maxCons = 0;
+
+function deadPath(){ return appFolder() + "\\depurados.json"; }
+function saveDead(){ try{ writeU(deadPath(), JSON.stringify(dead)); }catch(e){ st("No se pudo guardar depurados.json: " + e.message); } }
+function isDead(m, sid){ var d = dead[ns]; return !!(d && d[m] && d[m][sid]); }
+function deadCount(m){ var d = dead[ns], n = 0, k; if(d && d[m]){ for(k in d[m]){ if(d[m].hasOwnProperty(k)) n++; } } return n; }
+function modeLabel(m){ return m == "live" ? "TV en vivo" : (m == "vod" ? "Pel\u00edculas" : "Series"); }
+function modeFile(m){ return m == "live" ? "tv_en_vivo" : (m == "vod" ? "peliculas" : "series"); }
+function mAttr(s){ return String(s == null ? "" : s).replace(/"/g, "'").replace(/[\r\n]+/g, " "); }
+
+/* texto UTF-8 sin BOM (lo correcto para .m3u8) */
+function writeUtf8(path, text){
+  var a = new ActiveXObject("ADODB.Stream"), b = new ActiveXObject("ADODB.Stream");
+  a.Type = 2; a.Charset = "utf-8"; a.Open(); a.WriteText(text);
+  a.Position = 0; a.Type = 1; a.Position = 3;
+  b.Type = 1; b.Open(); a.CopyTo(b); b.SaveToFile(path, 2);
+  b.Close(); a.Close();
+}
+
+function apiTry(action, extra, ok, bad){
+  var u = base + "/player_api.php?username=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass);
+  if(action) u += "&action=" + action;
+  if(extra) u += extra;
+  http(u, function(t){
+    var d; try{ d = JSON.parse(t); }catch(e){ if(bad) bad("respuesta inv\u00e1lida"); return; }
+    ok(d);
+  }, function(m){ if(bad) bad(m); });
+}
+
+/* reparte la lista en N "carriles" que corren a la vez */
+function runPool(items, n, worker, tick, done){
+  var P = { n:n, stop:false }, i = 0, active = 0, fin = 0, total = items.length, over = false;
+  function pump(){
+    while(!P.stop && active < P.n && i < total){
+      active++;
+      (function(it){
+        var once = false;
+        worker(it, function(){ if(once) return; once = true; active--; fin++; tick(fin, total); pump(); });
+      })(items[i++]);
+    }
+    if(active == 0 && (P.stop || i >= total) && !over){ over = true; done(fin, total); }
+  }
+  setTimeout(pump, 0);
+  return P;
+}
+
+function catNames(m, cb){
+  var mk = function(arr){ var o = {}, i; for(i=0;i<arr.length;i++) o[arr[i].category_id] = arr[i].category_name; return o; };
+  if(catCache[m]){ cb(mk(catCache[m])); return; }
+  apiTry(A[m].cat, "", function(d){ catCache[m] = (d instanceof Array) ? d : []; cb(mk(catCache[m])); }, function(){ cb({}); });
+}
+function streamUrl(m, o){
+  if(m == "live") return base + "/live/" + user + "/" + pass + "/" + o.stream_id + "." + (cfg.liveExt || "ts");
+  return base + "/movie/" + user + "/" + pass + "/" + o.stream_id + "." + (V(o.container_extension) || "mp4");
+}
+
+/* lista COMPLETA (todas las categorias) sin los enlaces ya depurados. cb(null) si falla */
+function loadFull(m, cb){
+  catNames(m, function(cm){
+    apiTry(A[m].list, "", function(d){
+      var out = [], i, o;
+      if(!(d instanceof Array)) d = [];
+      if(m != "series"){
+        for(i=0;i<d.length;i++){
+          o = d[i]; if(isDead(m, o.stream_id)) continue;
+          out.push({ id:o.stream_id, name:o.name, logo:V(o.stream_icon), group:cm[o.category_id] || "", epg:V(o.epg_channel_id), url:streamUrl(m, o) });
+        }
+        cb(out); return;
+      }
+      if(!d.length){ cb([]); return; }
+      if(d.length > 30 && !confirm("Las series se exportan episodio por episodio: hay que pedirle al servidor los episodios de " + d.length + " series.\n\nPuede tardar varios minutos. \u00bfContinuar?")){ cb(null); return; }
+      var jobs = [], res = [], fail = 0;
+      for(i=0;i<d.length;i++) jobs.push({ s:d[i], i:i });
+      runPool(jobs, 5, function(job, next){
+        var s = job.s;
+        apiTry("get_series_info", "&series_id=" + s.series_id, function(inf){
+          var eps = (inf && inf.episodes && !(inf.episodes instanceof Array)) ? inf.episodes : {}, sn, list, j, e, tmp = [], r = [];
+          for(sn in eps){
+            if(!eps.hasOwnProperty(sn)) continue;
+            list = eps[sn] || [];
+            for(j=0;j<list.length;j++) tmp.push({ s:parseInt(sn,10) || 0, n:parseInt(list[j].episode_num,10) || 0, e:list[j] });
+          }
+          tmp.sort(function(a,b){ return (a.s - b.s) || (a.n - b.n); });
+          for(j=0;j<tmp.length;j++){
+            e = tmp[j].e;
+            r.push({ id:e.id, name:s.name + " - T" + tmp[j].s + " E" + tmp[j].n + (V(e.title) ? " - " + V(e.title) : ""), logo:V(s.cover), group:cm[s.category_id] || "", epg:"",
+                     url:base + "/series/" + user + "/" + pass + "/" + e.id + "." + (V(e.container_extension) || "mp4") });
+          }
+          res[job.i] = r; next();
+        }, function(){ fail++; next(); });
+      }, function(f, t){ if(f % 10 == 0 || f == t) st("Series: leyendo episodios " + f + " / " + t); },
+      function(){
+        for(var q=0;q<res.length;q++){ if(res[q]) out = out.concat(res[q]); }
+        if(fail) st("Aviso: " + fail + " series no respondieron y quedaron fuera.");
+        cb(out);
+      });
+    }, function(msg){ st("Error de conexi\u00f3n con el servidor (" + msg + ")"); cb(null); });
+  });
+}
+
+/* ---------- EXPORTAR ---------- */
+function exportList(){
+  if(!base){ st("Primero conecta tu servidor en Ajustes."); return; }
+  if(toolBusy){ st("Hay otra operaci\u00f3n en curso (exportar o depurar)."); return; }
+  var m = tmode(); toolBusy = true;
+  st("Exportando " + modeLabel(m) + ": descargando la lista completa...");
+  loadFull(m, function(items){
+    toolBusy = false;
+    if(!items){ st("Exportaci\u00f3n cancelada o sin respuesta del servidor."); return; }
+    if(!items.length){ st("No hay elementos para exportar."); return; }
+    var out = ["#EXTM3U"], i, it, nm;
+    for(i=0;i<items.length;i++){
+      it = items[i]; nm = String(it.name == null ? "" : it.name).replace(/[\r\n]+/g, " ");
+      out.push('#EXTINF:-1' + (it.epg ? ' tvg-id="' + mAttr(it.epg) + '"' : '') + ' tvg-name="' + mAttr(nm) + '"' +
+               (it.logo ? ' tvg-logo="' + mAttr(it.logo) + '"' : '') + ' group-title="' + mAttr(it.group) + '",' + nm);
+      out.push(it.url);
+    }
+    var path = appFolder() + "\\lista_" + modeFile(m) + ".m3u8";
+    try{ writeUtf8(path, out.join("\r\n") + "\r\n"); }
+    catch(e){ st("No se pudo guardar el archivo: " + e.message); return; }
+    st("Exportado: " + items.length + " entradas  \u2192  " + path);
+    try{ sh.Run('explorer.exe /select,"' + path + '"', 1, false); }catch(e){}
+  });
+}
+
+/* ---------- comprobar un enlace (sin programas externos) ----------
+   Abre el enlace, espera a que lleguen los primeros bytes y lo cierra enseguida.
+   Devuelve: "ok" | "hard" (404/410) | "soft" (sin datos, timeout, error) | "unk" (servidor limita/rechaza) */
+function checkUrl(url, ms, cb){
+  var x = null, fin = false, tm = null;
+  function end(r){
+    if(fin) return; fin = true;
+    try{ clearTimeout(tm); }catch(e){}
+    try{ x.onreadystatechange = function(){}; x.onprogress = null; }catch(e){}
+    try{ x.abort(); }catch(e){}
+    cb(r);
+  }
+  function look(){
+    if(fin) return;
+    var rs = x.readyState, s = 0, t = "";
+    if(rs < 2) return;
+    try{ s = x.status; }catch(e){ s = 0; }
+    if(s == 401 || s == 403 || s == 429 || s == 458 || s == 509) return end("unk");
+    if(s == 404 || s == 410) return end("hard");
+    if(s >= 400) return end("soft");
+    if(s == 0){ if(rs == 4) end("soft"); return; }
+    if(rs >= 3){
+      try{ t = x.responseText; }catch(e){ return end("ok"); }
+      if(t && t.length){ return end(t.charAt(0) == "<" ? "soft" : "ok"); }
+      if(rs == 4) return end("soft");
+    }
+  }
+  try{
+    x = new XMLHttpRequest();
+    x.open("GET", url, true);
+    try{ x.setRequestHeader("Cache-Control", "no-cache"); }catch(e){}
+    x.onreadystatechange = look;
+    try{ x.onprogress = look; }catch(e){}
+    tm = setTimeout(function(){ end("soft"); }, ms);
+    x.send();
+  }catch(e){
+    fin = true; try{ clearTimeout(tm); }catch(e2){}
+    setTimeout(function(){ cb("soft"); }, 0);
+  }
+}
+
+/* un enlace, con reintentos si el servidor dice "demasiadas conexiones" (y baja la velocidad solo) */
+function dpCheck(it, P, tmo, cb){
+  var tries = 0;
+  (function go(){
+    checkUrl(it.url, tmo, function(r){
+      if(r == "unk"){
+        tries++;
+        if(P && P.n > 1) P.n--;
+        if(tries < 3 && DP && !DP.stop){ setTimeout(go, 2000); return; }
+      }
+      cb(r);
+    });
+  })();
+}
+
+/* ---------- DEPURAR ---------- */
+function openDep(){
+  if(!base){ st("Primero conecta tu servidor en Ajustes."); return; }
+  if(!(DP && DP.running)){
+    if(tmode() == "series"){ st("Depurar funciona en TV en vivo y Pel\u00edculas: elige ese tipo en la lista."); return; }
+    $("dpTitle").innerText = "Depurar \u2013 " + modeLabel(tmode());
+    var n = deadCount(tmode());
+    $("dpMsg").innerHTML = "Cuando termine, los enlaces ca\u00eddos dejan de verse y tampoco saldr\u00e1n al exportar." +
+      (n ? "<br>Ya hay <b>" + n + "</b> quitados en esta pesta\u00f1a." : "") +
+      (maxCons ? "<br>Tu cuenta permite <b>" + maxCons + "</b> conexi\u00f3n(es): si el servidor rechaza, el programa baja la velocidad solo. Cierra el reproductor mientras depuras." : "");
+    $("dpBar").style.width = "0%"; $("dpDone").innerText = "0 / 0"; $("dpOk").innerText = "0"; $("dpBad").innerText = "0"; $("dpUnk").innerText = "0"; $("dpSpd").innerText = "-";
+  }
+  $("dep").style.display = "block";
+}
+function closeDep(){ $("dep").style.display = "none"; }
+function dpMsg(h){ $("dpMsg").innerHTML = h; }
+function dpUpdate(force){
+  if(!DP) return;
+  var n = new Date().getTime();
+  if(!force && n - DP.ui < 250) return;
+  DP.ui = n;
+  var S = DP.stat, ph2 = (DP.ph == 2), d = ph2 ? DP.p2d : S.done, t = ph2 ? DP.p2t : S.total;
+  var el = (n - DP.t0) / 1000, spd = el > 0 ? (S.done + DP.p2d) / el : 0;
+  $("dpBar").style.width = (t ? Math.round(d * 100 / t) : 0) + "%";
+  $("dpDone").innerText = d + " / " + t + (ph2 ? " (2.\u00aa revisi\u00f3n)" : "");
+  $("dpOk").innerText = S.ok; $("dpBad").innerText = S.dead; $("dpUnk").innerText = S.unk;
+  $("dpSpd").innerText = spd.toFixed(1) + " enlaces/s" + ((spd > 0 && t > d) ? "  \u00b7  faltan ~" + fmt((t - d) / spd) : "");
+  st("Depurando " + modeLabel(DP.mode) + ": " + d + " / " + t + "  |  ca\u00eddos: " + S.dead);
+}
+function startDep(){
+  if(toolBusy){ st("Hay otra operaci\u00f3n en curso."); return; }
+  if(!base || tmode() == "series") return;
+  var m = tmode(), conc = parseInt($("dpConc").value, 10) || 6, tmo = (parseInt($("dpTmo").value, 10) || 6) * 1000, again = $("dpAgain").checked;
+  toolBusy = true;
+  DP = { mode:m, running:true, stop:false, pool:null, ph:1, p2d:0, p2t:0, ui:0, t0:new Date().getTime(), stat:{ total:0, done:0, ok:0, dead:0, unk:0 }, guard:false };
+  $("dpStart").disabled = true; $("dpStop").disabled = false; $("dpRestore").disabled = true;
+  $("dpTitle").innerText = "Depurar \u2013 " + modeLabel(m);
+  dpMsg("Descargando la lista completa...");
+  loadFull(m, function(items){
+    if(!items || !items.length){ endDep([], "No se pudo obtener la lista (o est\u00e1 vac\u00eda)."); return; }
+    var S = DP.stat, hard = [], soft = [];
+    S.total = items.length; DP.t0 = new Date().getTime();
+    dpMsg("Revisando " + items.length + " enlaces (" + conc + " a la vez)...");
+    DP.pool = runPool(items, conc, function(it, next){
+      dpCheck(it, DP.pool, tmo, function(r){
+        S.done++;
+        if(r == "ok") S.ok++;
+        else if(r == "hard"){ S.dead++; hard.push(it.id); }
+        else if(r == "soft"){ S.dead++; soft.push(it); }
+        else S.unk++;
+        if(S.unk >= 15 && S.ok == 0 && S.dead == 0){ DP.guard = true; DP.stop = true; DP.pool.stop = true; }
+        dpUpdate(false); next();
+      });
+    }, function(){}, function(){
+      dpUpdate(true);
+      if(DP.guard){ endDep([], "El servidor est\u00e1 rechazando las conexiones (l\u00edmite de la cuenta o cuenta bloqueada). No se quit\u00f3 nada."); return; }
+      if(!again || DP.stop || !soft.length){
+        /* sin 2.a vuelta: los "soft" tambien se quitan, salvo que hayas detenido antes de confirmar */
+        endDep(hard.concat((DP.stop && again) ? [] : idsOf(soft)), DP.stop ? "Detenido." : "");
+        return;
+      }
+      DP.ph = 2; DP.p2d = 0; DP.p2t = soft.length;
+      dpMsg("Confirmando " + soft.length + " enlaces que no respondieron...");
+      var back = {};
+      DP.pool = runPool(soft, Math.min(conc, 4), function(it, next){
+        dpCheck(it, DP.pool, tmo, function(r){
+          DP.p2d++;
+          if(r == "ok"){ S.dead--; S.ok++; back[it.id] = 1; }
+          else if(r == "unk"){ S.dead--; S.unk++; back[it.id] = 1; }
+          dpUpdate(false); next();
+        });
+      }, function(){}, function(){
+        dpUpdate(true);
+        var kill = hard.slice(), i;
+        if(!DP.stop){ for(i=0;i<soft.length;i++){ if(!back[soft[i].id]) kill.push(soft[i].id); } }
+        endDep(kill, DP.stop ? "Detenido durante la confirmaci\u00f3n: solo se quitaron los que dieron error definitivo." : "");
+      });
+    });
+  });
+}
+function idsOf(list){ var o = [], i; for(i=0;i<list.length;i++) o.push(list[i].id); return o; }
+function stopDep(){
+  if(!DP || !DP.running) return;
+  DP.stop = true; if(DP.pool) DP.pool.stop = true;
+  $("dpStop").disabled = true; dpMsg("Deteniendo... esperando a que terminen los enlaces en curso.");
+}
+function endDep(kill, note){
+  var S = DP.stat, m = DP.mode, msg = note || "", i;
+  var judged = S.ok + S.dead;
+  if(kill.length && judged >= 20 && S.ok == 0){
+    msg = "Casi todos los enlaces fallaron: parece un problema de conexi\u00f3n o de l\u00edmite del servidor. No se quit\u00f3 nada.";
+    kill = [];
+  } else if(kill.length){
+    var d = dead[ns] || (dead[ns] = {}), mm = d[m] || (d[m] = {});
+    for(i=0;i<kill.length;i++) mm[kill[i]] = 1;
+    saveDead();
+    msg = "Listo. Se quitaron <b>" + kill.length + "</b> enlaces ca\u00eddos de " + modeLabel(m) + ". " + msg;
+  } else if(!msg){
+    msg = "Listo. Todos los enlaces revisados respondieron.";
+  }
+  if(S.unk) msg += "<br>" + S.unk + " no se pudieron verificar (el servidor los rechaz\u00f3) y se dejaron en la lista.";
+  DP.running = false; toolBusy = false;
+  $("dpStart").disabled = false; $("dpStop").disabled = true; $("dpRestore").disabled = false;
+  dpMsg(msg);
+  st("Depurar terminado: " + kill.length + " quitados, " + S.ok + " en l\u00ednea.");
+  if(kill.length && scr == "sec" && mode == m){ selCat(curCat); }
+}
+function restoreDep(){
+  if(toolBusy) return;
+  var n = deadCount(tmode());
+  if(!n){ dpMsg("No hay enlaces quitados en esta pesta\u00f1a."); return; }
+  if(!confirm("Se volver\u00e1n a mostrar los " + n + " enlaces quitados de " + modeLabel(tmode()) + ".\n\n\u00bfContinuar?")) return;
+  if(dead[ns]) delete dead[ns][tmode()];
+  saveDead();
+  dpMsg("Restaurados " + n + " enlaces.");
+  if(scr == "sec" && mode == tmode()) selCat(curCat);
+}
+
+document.onkeydown = function(e){
+  e = e || window.event;
+  if(e.keyCode == 27){
+    if(INTRO) INTRO();
+    else if($("pw").style.display == "block") closePw();
+    else if($("dep").style.display == "block") closeDep();
+    else if($("cfg").style.display == "block") closeCfg();
+    else if($("modal").style.display == "block") closeDetail();
+    else if(scr == "search") clearSearch();
+    else closeSide();
+  }
+};
+window.onunload = function(){ try{ stopHere(); endSession(true); saveProg(true); }catch(e){} };
+
+window.onload = function(){
+  try{ window.resizeTo(1320, 800); }catch(e){}
+  $("lLogo").src = IMG.logo; $("bLogo").src = IMG.logoS;
+  $("tLive").src = IMG.live; $("tVod").src = IMG.vod; $("tSeries").src = IMG.series;
+  loadAll(); dragInit();
+  $("l_usr").value = cfg.usr || ""; $("l_pwd").value = cfg.pwd || "";
+  setScr("login");
+  try{ ($("l_usr").value ? $("l_pwd") : $("l_usr")).focus(); }catch(e){}
+};
+</script>
+</body>
+</html>

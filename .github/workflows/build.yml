@@ -1,0 +1,78 @@
+name: Build Pirate_TV APK
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Pillow
+        run: pip install Pillow
+
+      - name: Generate Launcher Icons and Android TV Banner
+        run: python3 tools/generar_iconos.py
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant Execute Permission to Gradlew
+        run: chmod +x gradlew
+
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest --stacktrace --no-daemon
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
+
+      - name: Verify Icons in APK
+        run: |
+          echo "Verificando iconos en el APK..."
+          unzip -l app/build/outputs/apk/debug/*.apk | grep -E "ic_launcher|banner"
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pirate_TV-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Update Latest Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Pirate_TV - Última Versión"
+          draft: false
+          prerelease: false
+          files: app/build/outputs/apk/debug/*.apk
+          body: |
+            ### Pirate_TV - Correcciones y Mejoras
+            - **Autenticación tolerante y segura:** Se reemplazó el parseo estricto por un extractor tolerante a tipos mixtos (números, texto, booleanos) en `user_info`. Se valida correctamente `auth` (1, "1", true) y cuentas activas. Solo se reporta contraseña incorrecta si `auth` es explícitamente 0/"0"/false o si falta `user_info`. Si la cuenta ha vencido o está inactiva, se informa con la fecha de vencimiento.
+            - **Pantalla de login desplazable:** Soporte de desplazamiento vertical (`verticalScroll`) con ajuste dinámico de teclado (`imePadding`) y reducción de altura máxima del logo a ~140dp para visualización completa sin recortes en pantallas de 1080p o con teclado abierto.
+            - **Íconos y Banner Android TV:** Generación de íconos de launcher y versión circular (LANCZOS) a partir de `recursos/ic_launcher_source.png` sin marcos adicionales ni deformaciones. Generación de banner oficial Android TV (`320x180` y `480x270`) con fondo `#1A1F27`, ícono centrado y texto en dorado `#E3BD75` con fuente serif.
+            - **Compatibilidad Android TV Leanback:** Declaración de `android:banner` y categoría `LEANBACK_LAUNCHER` en el manifest.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

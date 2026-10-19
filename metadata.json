@@ -1,0 +1,6 @@
+{
+  "name": "Pirate_TV",
+  "description": "Cliente IPTV para servidores Xtream Codes con TV en vivo, películas, series y reproductor Media3.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
