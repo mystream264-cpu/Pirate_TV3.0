@@ -1,7 +1,6 @@
 package com.example.ui.screens
 
 import android.app.Activity
-import android.content.Context
 import android.net.Uri
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -10,7 +9,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,17 +24,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -49,33 +52,45 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.HttpDataSource
+import androidx.media3.exoplayer.DefaultLivePlaybackSpeedControl
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.exoplayer.source.MediaSource
-import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.ui.PlayerView
+import com.example.data.util.maskPasswordInUrl
+import com.example.ui.theme.BorderDark
+import com.example.ui.theme.GoldLight
 import com.example.ui.theme.GoldPrimary
+import com.example.ui.theme.PanelAltDark
 import com.example.ui.theme.PanelDark
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
+import com.example.ui.util.dpadFocusable
 import kotlinx.coroutines.delay
 
 fun formatTime(seconds: Long): String {
@@ -90,6 +105,23 @@ fun formatTime(seconds: Long): String {
     }
 }
 
+private fun findHttpErrorCode(throwable: Throwable?): Int? {
+    var cur = throwable
+    while (cur != null) {
+        if (cur is HttpDataSource.InvalidResponseCodeException) {
+            return cur.responseCode
+        }
+        cur = cur.cause
+    }
+    return null
+}
+
+data class PlayerErrorState(
+    val errorCodeName: String,
+    val httpCode: Int?,
+    val maskedUrl: String
+)
+
 @OptIn(UnstableApi::class)
 @Composable
 fun PlayerScreen(
@@ -103,7 +135,7 @@ fun PlayerScreen(
     val context = LocalContext.current
     val activity = context as? Activity
 
-    // Mantener pantalla encendida y modo inmersivo
+    // Mantener pantalla encendida y ocultar barras de sistema (modo inmersivo)
     DisposableEffect(Unit) {
         activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val window = activity?.window
@@ -123,7 +155,7 @@ fun PlayerScreen(
         }
     }
 
-    // Inicializar ExoPlayer con Media3
+    // Configuración robusta de DefaultHttpDataSource con User-Agent VLC y cross protocol redirects
     val exoPlayer = remember {
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setAllowCrossProtocolRedirects(true)
@@ -132,43 +164,86 @@ fun PlayerScreen(
             .setUserAgent(com.example.data.api.NetworkConfig.USER_AGENT)
 
         val dataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
-
         val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory)
+
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                /* minBufferMs = */ 15000,
+                /* maxBufferMs = */ 50000,
+                /* bufferForPlaybackMs = */ 2500,
+                /* bufferForPlaybackAfterRebufferMs = */ 5000
+            )
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+
+        val livePlaybackSpeedControl = DefaultLivePlaybackSpeedControl.Builder()
+            .setFallbackMinPlaybackSpeed(1.0f)
+            .setFallbackMaxPlaybackSpeed(1.0f)
+            .build()
 
         ExoPlayer.Builder(context)
             .setMediaSourceFactory(mediaSourceFactory)
+            .setLoadControl(loadControl)
+            .setLivePlaybackSpeedControl(livePlaybackSpeedControl)
             .build()
     }
 
+    var activeUrl by remember(streamUrl) { mutableStateOf(streamUrl) }
+    var hasRetriedFallback by remember(streamUrl) { mutableStateOf(false) }
+    var isReconnecting by remember { mutableStateOf(false) }
     var isPlaying by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(true) }
     var currentPositionMs by remember { mutableLongStateOf(0L) }
     var durationMs by remember { mutableLongStateOf(0L) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorState by remember { mutableStateOf<PlayerErrorState?>(null) }
     var controlsVisible by remember { mutableStateOf(true) }
     var isSeeking by remember { mutableStateOf(false) }
     var sliderValue by remember { mutableFloatStateOf(0f) }
 
-    // Preparar el medio
-    LaunchedEffect(streamUrl) {
-        errorMessage = null
+    // Focus requesters para navegación con control remoto
+    val retryFocusRequester = remember { FocusRequester() }
+    val playPauseFocusRequester = remember { FocusRequester() }
+
+    fun buildMediaItem(url: String): MediaItem {
+        val builder = MediaItem.Builder().setUri(Uri.parse(url))
+        if (isLive) {
+            if (url.endsWith(".m3u8", ignoreCase = true)) {
+                builder.setMimeType(MimeTypes.APPLICATION_M3U8)
+            } else if (url.endsWith(".ts", ignoreCase = true)) {
+                builder.setMimeType(MimeTypes.VIDEO_MP2T)
+            }
+        }
+        return builder.build()
+    }
+
+    fun startPlayback(url: String) {
+        errorState = null
         isLoading = true
+        exoPlayer.stop()
+        exoPlayer.clearMediaItems()
+        exoPlayer.setMediaItem(buildMediaItem(url))
+        exoPlayer.prepare()
+        if (resumeSeconds > 0 && !isLive) {
+            exoPlayer.seekTo(resumeSeconds * 1000)
+        }
+        exoPlayer.playWhenReady = true
+    }
 
-        val uri = Uri.parse(streamUrl)
-        val mediaItem = MediaItem.Builder()
-            .setUri(uri)
-            .build()
-
+    // Configuración del listener de reproducción
+    DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
                     Player.STATE_BUFFERING -> isLoading = true
                     Player.STATE_READY -> {
                         isLoading = false
+                        isReconnecting = false
+                        errorState = null
                         durationMs = exoPlayer.duration.coerceAtLeast(0L)
                     }
                     Player.STATE_ENDED -> {
                         isLoading = false
+                        isReconnecting = false
                         onProgressUpdate(durationMs / 1000, durationMs / 1000)
                     }
                     Player.STATE_IDLE -> Unit
@@ -181,18 +256,51 @@ fun PlayerScreen(
 
             override fun onPlayerError(error: PlaybackException) {
                 isLoading = false
-                errorMessage = "Error de reproducción: ${error.localizedMessage ?: "código ${error.errorCodeName}"}"
+                // Reintento automático una sola vez cambiando entre .m3u8 y .ts si es TV en vivo
+                if (isLive && !hasRetriedFallback) {
+                    hasRetriedFallback = true
+                    isReconnecting = true
+                    val alternateUrl = if (activeUrl.endsWith(".m3u8", ignoreCase = true)) {
+                        activeUrl.substringBeforeLast(".m3u8") + ".ts"
+                    } else if (activeUrl.endsWith(".ts", ignoreCase = true)) {
+                        activeUrl.substringBeforeLast(".ts") + ".m3u8"
+                    } else {
+                        "$activeUrl.ts"
+                    }
+                    activeUrl = alternateUrl
+                    startPlayback(alternateUrl)
+                } else {
+                    isReconnecting = false
+                    val httpCode = findHttpErrorCode(error)
+                    val masked = maskPasswordInUrl(activeUrl)
+                    errorState = PlayerErrorState(
+                        errorCodeName = error.errorCodeName,
+                        httpCode = httpCode,
+                        maskedUrl = masked
+                    )
+                }
             }
         }
 
         exoPlayer.addListener(listener)
-        exoPlayer.setMediaItem(mediaItem)
-        exoPlayer.prepare()
 
-        if (resumeSeconds > 0 && !isLive) {
-            exoPlayer.seekTo(resumeSeconds * 1000)
+        onDispose {
+            exoPlayer.removeListener(listener)
+            if (!isLive && exoPlayer.currentPosition > 0) {
+                val dur = exoPlayer.duration.coerceAtLeast(0L)
+                onProgressUpdate(exoPlayer.currentPosition / 1000, dur / 1000)
+            }
+            exoPlayer.stop()
+            exoPlayer.clearMediaItems()
+            exoPlayer.release()
         }
-        exoPlayer.playWhenReady = true
+    }
+
+    // Preparar medio inicial
+    LaunchedEffect(streamUrl) {
+        hasRetriedFallback = false
+        activeUrl = streamUrl
+        startPlayback(streamUrl)
     }
 
     // Ticker para actualizar posición y guardar progreso periódicamente
@@ -214,21 +322,28 @@ fun PlayerScreen(
 
     // Auto-ocultar controles tras 4 segundos
     LaunchedEffect(controlsVisible, isPlaying) {
-        if (controlsVisible && isPlaying) {
+        if (controlsVisible && isPlaying && errorState == null) {
             delay(4000)
             controlsVisible = false
         }
     }
 
-    // Limpieza al cerrar reproductor
-    DisposableEffect(exoPlayer) {
-        onDispose {
-            if (!isLive && exoPlayer.currentPosition > 0) {
-                val dur = exoPlayer.duration.coerceAtLeast(0L)
-                onProgressUpdate(exoPlayer.currentPosition / 1000, dur / 1000)
-            }
-            exoPlayer.stop()
-            exoPlayer.release()
+    // Al aparecer error o abrir controles, enfocar elemento clave
+    LaunchedEffect(errorState) {
+        if (errorState != null) {
+            delay(100)
+            try {
+                retryFocusRequester.requestFocus()
+            } catch (_: Exception) {}
+        }
+    }
+
+    LaunchedEffect(controlsVisible) {
+        if (controlsVisible && errorState == null) {
+            delay(100)
+            try {
+                playPauseFocusRequester.requestFocus()
+            } catch (_: Exception) {}
         }
     }
 
@@ -236,6 +351,40 @@ fun PlayerScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .focusable()
+            .onKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyUp) {
+                    when (keyEvent.key) {
+                        Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                            if (!controlsVisible) {
+                                controlsVisible = true
+                                true
+                            } else false
+                        }
+                        Key.DirectionLeft -> {
+                            if (!isLive) {
+                                controlsVisible = true
+                                val target = (exoPlayer.currentPosition - 10000).coerceAtLeast(0L)
+                                exoPlayer.seekTo(target)
+                                true
+                            } else false
+                        }
+                        Key.DirectionRight -> {
+                            if (!isLive) {
+                                controlsVisible = true
+                                val target = (exoPlayer.currentPosition + 10000).coerceAtMost(durationMs)
+                                exoPlayer.seekTo(target)
+                                true
+                            } else false
+                        }
+                        Key.DirectionUp, Key.DirectionDown -> {
+                            controlsVisible = true
+                            true
+                        }
+                        else -> false
+                    }
+                } else false
+            }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -259,46 +408,140 @@ fun PlayerScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Spinner de carga
-        if (isLoading) {
-            CircularProgressIndicator(
-                color = GoldPrimary,
+        // Spinner de carga y reconexión
+        if (isLoading || isReconnecting) {
+            Column(
                 modifier = Modifier
-                    .size(52.dp)
                     .align(Alignment.Center)
-            )
+                    .background(Color(0x99000000), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 28.dp, vertical = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator(
+                    color = GoldPrimary,
+                    modifier = Modifier.size(52.dp)
+                )
+                if (isReconnecting) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text(
+                        text = "Reconectando...",
+                        color = GoldLight,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
 
-        // Mensaje de error si falla
-        if (errorMessage != null) {
+        // Mensaje de error útil, selectable y botón Reintentar
+        if (errorState != null) {
+            val err = errorState!!
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xCC000000)),
+                    .background(Color(0xEE0D1016)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(24.dp)
+                    modifier = Modifier
+                        .padding(28.dp)
+                        .widthIn(max = 680.dp)
                 ) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = Color.White,
-                        fontSize = 15.sp,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = GoldPrimary,
+                        modifier = Modifier.size(46.dp)
                     )
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(GoldPrimary)
-                            .clickable { onClose() }
-                            .padding(horizontal = 20.dp, vertical = 10.dp)
-                    ) {
-                        Text(
-                            text = "Volver",
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold
-                        )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text(
+                        text = "No se pudo reproducir el canal",
+                        color = GoldLight,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    SelectionContainer {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(PanelDark, RoundedCornerShape(8.dp))
+                                .border(1.dp, BorderDark, RoundedCornerShape(8.dp))
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                text = "Error: ${err.errorCodeName}",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            if (err.httpCode != null) {
+                                Text(
+                                    text = "Código HTTP: ${err.httpCode}",
+                                    color = Color(0xFFFF7B72),
+                                    fontSize = 13.5.sp,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                            Text(
+                                text = err.maskedUrl,
+                                color = TextMuted,
+                                fontSize = 12.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .dpadFocusable(
+                                    focusRequester = retryFocusRequester,
+                                    shape = RoundedCornerShape(6.dp),
+                                    onClick = {
+                                        hasRetriedFallback = false
+                                        activeUrl = streamUrl
+                                        startPlayback(streamUrl)
+                                    }
+                                )
+                                .background(GoldPrimary, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 24.dp, vertical = 12.dp)
+                                .testTag("player_retry_button"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Reintentar",
+                                color = Color.Black,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .dpadFocusable(
+                                    shape = RoundedCornerShape(6.dp),
+                                    onClick = onClose
+                                )
+                                .background(PanelAltDark, RoundedCornerShape(6.dp))
+                                .border(1.dp, BorderDark, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 24.dp, vertical = 12.dp)
+                                .testTag("player_error_back_button"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Volver",
+                                color = Color.White,
+                                fontSize = 15.sp
+                            )
+                        }
                     }
                 }
             }
@@ -306,7 +549,7 @@ fun PlayerScreen(
 
         // Controles superpuestos
         AnimatedVisibility(
-            visible = controlsVisible,
+            visible = controlsVisible && errorState == null,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.fillMaxSize()
@@ -321,30 +564,35 @@ fun PlayerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.TopCenter)
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                        .padding(horizontal = 24.dp, vertical = 18.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = onClose,
+                    Box(
                         modifier = Modifier
-                            .size(42.dp)
+                            .dpadFocusable(
+                                shape = CircleShape,
+                                onClick = onClose
+                            )
+                            .size(44.dp)
                             .clip(CircleShape)
-                            .background(Color(0x80000000))
-                            .testTag("player_back_button")
+                            .background(Color(0x99000000))
+                            .testTag("player_back_button"),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Atrás",
-                            tint = Color.White
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(14.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
 
                     Text(
                         text = title,
                         color = Color.White,
-                        fontSize = 18.sp,
+                        fontSize = 19.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1
                     )
@@ -354,63 +602,76 @@ fun PlayerScreen(
                 if (!isLive) {
                     Row(
                         modifier = Modifier.align(Alignment.Center),
-                        horizontalArrangement = Arrangement.spacedBy(28.dp),
+                        horizontalArrangement = Arrangement.spacedBy(32.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(
-                            onClick = {
-                                val target = (exoPlayer.currentPosition - 10000).coerceAtLeast(0L)
-                                exoPlayer.seekTo(target)
-                            },
+                        Box(
                             modifier = Modifier
-                                .size(48.dp)
+                                .dpadFocusable(
+                                    shape = CircleShape,
+                                    onClick = {
+                                        val target = (exoPlayer.currentPosition - 10000).coerceAtLeast(0L)
+                                        exoPlayer.seekTo(target)
+                                    }
+                                )
+                                .size(50.dp)
                                 .clip(CircleShape)
-                                .background(Color(0x80000000))
+                                .background(Color(0x99000000)),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Replay10,
                                 contentDescription = "Retroceder 10s",
                                 tint = Color.White,
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(30.dp)
                             )
                         }
 
-                        IconButton(
-                            onClick = {
-                                if (exoPlayer.isPlaying) {
-                                    exoPlayer.pause()
-                                } else {
-                                    exoPlayer.play()
-                                }
-                            },
+                        Box(
                             modifier = Modifier
-                                .size(64.dp)
+                                .dpadFocusable(
+                                    focusRequester = playPauseFocusRequester,
+                                    shape = CircleShape,
+                                    onClick = {
+                                        if (exoPlayer.isPlaying) {
+                                            exoPlayer.pause()
+                                        } else {
+                                            exoPlayer.play()
+                                        }
+                                    }
+                                )
+                                .size(68.dp)
                                 .clip(CircleShape)
-                                .background(GoldPrimary)
+                                .background(GoldPrimary),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                 contentDescription = if (isPlaying) "Pausar" else "Reproducir",
                                 tint = Color.Black,
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier.size(38.dp)
                             )
                         }
 
-                        IconButton(
-                            onClick = {
-                                val target = (exoPlayer.currentPosition + 10000).coerceAtMost(durationMs)
-                                exoPlayer.seekTo(target)
-                            },
+                        Box(
                             modifier = Modifier
-                                .size(48.dp)
+                                .dpadFocusable(
+                                    shape = CircleShape,
+                                    onClick = {
+                                        val target = (exoPlayer.currentPosition + 10000).coerceAtMost(durationMs)
+                                        exoPlayer.seekTo(target)
+                                    }
+                                )
+                                .size(50.dp)
                                 .clip(CircleShape)
-                                .background(Color(0x80000000))
+                                .background(Color(0x99000000)),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Forward10,
                                 contentDescription = "Adelantar 10s",
                                 tint = Color.White,
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(30.dp)
                             )
                         }
                     }
@@ -422,7 +683,7 @@ fun PlayerScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .align(Alignment.BottomCenter)
-                            .padding(horizontal = 24.dp, vertical = 16.dp)
+                            .padding(horizontal = 30.dp, vertical = 20.dp)
                     ) {
                         val posSec = if (isSeeking) sliderValue.toLong() else currentPositionMs / 1000
                         val durSec = durationMs / 1000

@@ -667,11 +667,20 @@ class XtreamRepository(
     }
 
     fun buildLiveStreamUrl(streamId: String, ext: String): String {
-        val extension = if (ext.lowercase() == "m3u8") "m3u8" else "ts"
-        return "$currentBaseUrl/live/$currentUser/$currentPass/$streamId.$extension"
+        val cleanBase = currentBaseUrl.trim().trimEnd('/')
+        val cleanUser = currentUser.trim()
+        val cleanPass = currentPass.trim()
+        val cleanId = streamId.trim()
+        val extension = if (ext.trim().lowercase() == "ts") "ts" else "m3u8"
+        return "$cleanBase/live/$cleanUser/$cleanPass/$cleanId.$extension"
     }
 
     fun buildVodStreamUrl(streamId: String, ext: String): String {
-        return "$currentBaseUrl/movie/$currentUser/$currentPass/$streamId.$ext"
+        val cleanBase = currentBaseUrl.trim().trimEnd('/')
+        val cleanUser = currentUser.trim()
+        val cleanPass = currentPass.trim()
+        val cleanId = streamId.trim()
+        val cleanExt = ext.trim().ifEmpty { "mp4" }
+        return "$cleanBase/movie/$cleanUser/$cleanPass/$cleanId.$cleanExt"
     }
 }

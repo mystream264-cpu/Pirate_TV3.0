@@ -2,7 +2,6 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LiveTv
@@ -22,9 +20,12 @@ import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -38,9 +39,8 @@ import com.example.ui.components.AssetUtils
 import com.example.ui.theme.BorderDark
 import com.example.ui.theme.GoldLight
 import com.example.ui.theme.GoldPrimary
-import com.example.ui.theme.PanelAltDark
-import com.example.ui.theme.PanelDark
-import com.example.ui.theme.TextPrimary
+import com.example.ui.util.dpadFocusable
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(
@@ -49,6 +49,15 @@ fun HomeScreen(
     val liveExists = AssetUtils.rememberAssetExists("img_live.png")
     val vodExists = AssetUtils.rememberAssetExists("img_vod.png")
     val seriesExists = AssetUtils.rememberAssetExists("img_series.png")
+
+    val firstTileFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        delay(120)
+        try {
+            firstTileFocusRequester.requestFocus()
+        } catch (_: Exception) {}
+    }
 
     Box(
         modifier = Modifier
@@ -68,6 +77,7 @@ fun HomeScreen(
                 assetName = "img_live.png",
                 hasAsset = liveExists,
                 icon = Icons.Default.LiveTv,
+                focusRequester = firstTileFocusRequester,
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 12.dp),
@@ -80,6 +90,7 @@ fun HomeScreen(
                 assetName = "img_vod.png",
                 hasAsset = vodExists,
                 icon = Icons.Default.Movie,
+                focusRequester = null,
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 12.dp),
@@ -92,6 +103,7 @@ fun HomeScreen(
                 assetName = "img_series.png",
                 hasAsset = seriesExists,
                 icon = Icons.Default.Tv,
+                focusRequester = null,
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 12.dp),
@@ -108,14 +120,20 @@ private fun HomeTile(
     assetName: String,
     hasAsset: Boolean,
     icon: ImageVector,
+    focusRequester: FocusRequester?,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
+            .dpadFocusable(
+                focusRequester = focusRequester,
+                shape = RoundedCornerShape(12.dp),
+                scale = 1.05f,
+                onClick = onClick
+            )
             .border(1.dp, BorderDark, RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
             .testTag("tile_$mode")
     ) {
         if (hasAsset) {
@@ -126,7 +144,6 @@ private fun HomeTile(
                 modifier = Modifier.fillMaxWidth()
             )
         } else {
-            // Tarjeta de reemplazo elegante cuando aún no se han subido las imágenes
             val tileGradient = Brush.verticalGradient(
                 colors = listOf(
                     Color(0xFF2C343F),

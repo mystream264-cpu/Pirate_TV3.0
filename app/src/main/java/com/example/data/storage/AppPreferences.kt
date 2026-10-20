@@ -15,7 +15,7 @@ data class AppConfig(
     val serverUrl: String = "http://sdmx.vip:80",
     val username: String = "",
     val password: String = "",
-    val liveExt: String = "ts",
+    val liveExt: String = "m3u8",
     val omdbApiKey: String = ""
 )
 
@@ -37,7 +37,7 @@ class AppPreferences(private val context: Context) {
             serverUrl = srv,
             username = prefs[Keys.USERNAME] ?: "",
             password = prefs[Keys.PASSWORD] ?: "",
-            liveExt = prefs[Keys.LIVE_EXT] ?: "ts",
+            liveExt = prefs[Keys.LIVE_EXT] ?: "m3u8",
             omdbApiKey = prefs[Keys.OMDB_API_KEY] ?: ""
         )
     }
